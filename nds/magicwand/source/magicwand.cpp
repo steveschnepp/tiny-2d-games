@@ -1,4 +1,5 @@
 // Drawing on DS is easy... This'll show you to what point !
+// Copyright 2008-2009 Steve Schnepp <steve.schnepp@pwkf.org>
 
 // Includes
 #include <nds.h>
@@ -7,11 +8,12 @@
 
 #include <list>
 
-const int MAX_X = 512;
-const int MAX_Y = 192;
+const int MAX_X = SCREEN_WIDTH;
+const int MAX_Y = SCREEN_HEIGHT;
 
 int gravity = 1;
 int escape_velocity = 64;
+int nb_particles_per_frame = 1;
 
 static uint16* front = VRAM_A;
 static uint16* back = VRAM_B;
@@ -28,6 +30,16 @@ void flip_vram()
 	}
 }
 
+int PA_CheckLid();
+void checkReset(int keys);
+
+static inline void dmaFillWordsAsynch(const void* src, void* dest, uint32 size) {
+	DMA_SRC(3) = (uint32)src;
+	DMA_DEST(3) = (uint32)dest;
+	DMA_CR(3) = DMA_SRC_FIX | DMA_COPY_WORDS | (size>>2);
+	while(DMA_CR(3) & DMA_BUSY);
+}
+
 
 struct Particle {
 	int x;
@@ -35,31 +47,35 @@ struct Particle {
 	int dx;
 	int dy;
 	bool is_offscreen;
+	const unsigned short int color;
 
-	Particle(int initial_x, int initial_y) 
-		: is_offscreen(false) 
+	Particle(int initial_x, int initial_y, unsigned short int initial_color) 
+		: is_offscreen(false), color(initial_color)
 	{
 		setX(initial_x);
 		setY(initial_y);
+		
+		int initial_velocity = (rand() % escape_velocity) - escape_velocity / 2; 
+		short initial_angle = (rand() % 0xFFFF); 
 
-		dx = (rand() % escape_velocity) - escape_velocity/2;
-		dy = (rand() % escape_velocity) - escape_velocity/2;
+		dx = (initial_velocity * sinLerp(initial_angle)) >> 12;
+		dy = (initial_velocity * cosLerp(initial_angle)) >> 12;
 	}
 
-	int getX() {
+	inline int getX() {
 		return x >> 8;
 	}
-	int getY() {
+	inline int getY() {
 		return y >> 8;
 	}
-	void setX(int new_x) {
-		x = new_x << 8;
+	inline void setX(int new_x) {
+	x = new_x << 8;
 	}
-	void setY(int new_y) {
+	inline void setY(int new_y) {
 		y = new_y << 8;
 	}
 
-	void move() {
+	inline void move() {
 		if (is_offscreen) return;
 		// Gravity
 		dy += gravity;
@@ -71,31 +87,31 @@ struct Particle {
 			x = 0;
 			dx = 0;
 		}
-		if (getX() > MAX_X) {
-			x = MAX_X;
+		if (getX() > MAX_X - 1) {
+			x = MAX_X - 1;
 			dx = 0;
 		}
 		if (getY()<0) {
 			y = 0;
 			dy = 0;
 		}
-		if (getY() > MAX_Y) {
-			y = MAX_Y;
+		if (getY() > MAX_Y - 1) {
+			y = MAX_Y - 1;
 			dy = 0;
 			is_offscreen = true;
 		}
 	}
 
-	void Put8bitPixel(int x, int y, unsigned short int color) {
-		front[x + y * SCREEN_WIDTH] = color;
+	inline void Put8bitPixel(int x, int y, unsigned short int color) {
+		back[x + y * SCREEN_WIDTH] = color;
 	}
 
-	void hide() {
+	inline void hide() {
 		Put8bitPixel(getX(), getY(), RGB15(0,0,0));
 	}
-	void show() {
+	inline void show() {
 		if (is_offscreen) return;
-		Put8bitPixel(getX(), getY(), RGB15(31,31,31));
+		Put8bitPixel(getX(), getY(), color);
 	}
 };
 
@@ -220,6 +236,8 @@ int main(int argc, char *argv[]) {
 		scanKeys();
 		int held = keysHeld();
 
+		// checkReset(held);
+
 		frame ++;
 		if (held & KEY_UP) {
 			gravity ++;
@@ -234,64 +252,104 @@ int main(int argc, char *argv[]) {
 			escape_velocity --;
 			if (escape_velocity < 0) escape_velocity = 0;
 		}
-
-		if (held & KEY_TOUCH) {
-			// Add a particle
-			Particle* particle = new Particle(touch.px, touch.py);
-			particles.push_back(particle);
+		
+		if (held & KEY_A) {
+			nb_particles_per_frame ++;
+		} else if (held & KEY_B) {
+			nb_particles_per_frame --;
+			if (nb_particles_per_frame < 1) nb_particles_per_frame = 1;
 		}
 
-		std::list<Particle*> new_particles;
+		if (held & KEY_TOUCH) {
+			const unsigned short int color = (rand() & 0xFFFF) | (1 << 15);
 
-		// Moves every Particle
-		int counter = 0;
-		for(std::list<Particle*>::iterator i = particles.begin(); i != particles.end(); ++i) {
-			Particle* particle = *i;
-			counter++;
-
-			// particle->hide();
-			particle->move();
-
-			if (particle->is_offscreen) {
-			// print at using ansi escape sequence \x1b[line;columnH 
-				iprintf("\x1b[0;10HDelete particle number : %d   ", counter);
-//				consoleDebugInit(DebugDevice_CONSOLE);
-//				fprintf(stderr, "Delete particle number : %d/%d\n", counter, particles.size());
-				i = particles.erase(i);
-				delete (particle);
-			} else {
-				particle->show();
+			// Add nb_particles_per_frame particle
+			for (int i = 0; i < nb_particles_per_frame; i++) {
+				Particle* particle = new Particle(touch.px, touch.py, color);
+				particles.push_back(particle);
 			}
 		}
 
-		// particles = new_particles;
-
-		int line_number = 0;	
-		iprintf("\x1b[0;%dHNumber of particles : %d   ", line_number++, particles.size());
-		iprintf("\x1b[0;%dHGravity : %d   ", line_number++, gravity);
-		iprintf("\x1b[0;%dHEscape velocity : %d   ", line_number++, escape_velocity);
-		
-		iprintf("\x1b[0;0HFrame : %d   ", frame);
-		
-		// PA_CheckLid();
-
-		swiWaitForVBlank();
-
-		
-		// Wait while DMA Channel 3 is BUSY;
-		if (dmaBusy(3)) {
-			fprintf(stderr, "Wait while DMA Channel 3 is BUSY\n");
-			int count = 0;
-			while(dmaBusy(3)) { count ++; }
-			fprintf(stderr, "Waited %d while DMA Channel 3 is BUSY\n", count);
+		// Moves every Particle
+		for(std::list<Particle*>::iterator i = particles.begin(); i != particles.end(); ++i) {
+			Particle* particle = *i;
+			particle->move();
+			if (particle->is_offscreen) {
+				i = particles.erase(i);
+				delete (particle);
+			} 
 		}
+		
+		// Wait while DMA Channel 3 is BUSY
+		if (dmaBusy(3)) {
+//			fprintf(stderr, "Wait while DMA Channel 3 is BUSY\n");
+			int count = 0;
+			while(dmaBusy(3)) { ++ count; }
+//			fprintf(stderr, "Waited %d cycles while DMA Channel 3 is BUSY\n", count);
+		}
+
+		
+		// Draws every Particle on the back screen
+		for(std::list<Particle*>::iterator i = particles.begin(); i != particles.end(); ++i) {
+			Particle* particle = *i;
+			particle->show();
+		}
+
+
+//		int line_number = 0;	
+/*
+		iprintf("Frame : %d   \n", frame);
+		iprintf("Number of particles : %d   \n", particles.size());
+		iprintf("Gravity  : %d   \n", gravity);
+		iprintf("Escape velocity  : %d   \n", escape_velocity);
+		iprintf("nb_particles_per_frame : %d   \n", nb_particles_per_frame);
+*/
 		
 		// flip screens
 		flip_vram();
 
 		// erase back screen in async using DMA
-		dmaCopyAsynch(RGB15(0,0,0), back, SCREEN_HEIGHT * SCREEN_WIDTH );
+#define DMA_COPY
+#ifdef DMA_COPY
+		dmaFillWordsAsynch(RGB15(0,0,0), back, sizeof(uint16) * SCREEN_WIDTH * SCREEN_HEIGHT);
+#else
+		uint16 col = RGB15(0, 0, 0) | BIT(15);
+		uint32 colcol = col | col << 16;
+		swiFastCopy(&colcol, back, 192*256*2/4 | COPY_MODE_FILL);
+#endif
+		
+		PA_CheckLid();
+		swiWaitForVBlank();
 	}
 	
 	return 0;
 } // End of main()
+
+inline bool PA_LidClosed() {
+	return keysHeld() & KEY_LID; 
+}
+
+inline int PA_CheckLid() {
+	if (!PA_LidClosed()) {
+		return 0;
+	}
+
+	// Shutdown everything :p
+	powerOff(POWER_ALL_2D); 
+
+	// Wait for the lid to be opened again...
+	while(PA_LidClosed()) {
+		swiWaitForVBlank();
+		scanKeys();
+	}
+
+	// Return the power !
+	powerOn(POWER_ALL_2D);
+	return 1;
+}
+
+inline void checkReset(int keys) {
+	if (keys | KEY_A | KEY_B | KEY_X | KEY_Y | KEY_L | KEY_R) {
+		swiSoftReset();
+	}
+}
