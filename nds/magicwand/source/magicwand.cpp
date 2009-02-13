@@ -261,7 +261,11 @@ int main(int argc, char *argv[]) {
 		}
 
 		if (held & KEY_TOUCH) {
-			const unsigned short int color = (rand() & 0xFFFF) | (1 << 15);
+			int random_int = rand();
+			uint8 r_comp = (random_int & 0x0F00) >> 8;
+			uint8 g_comp = (random_int & 0x00F0) >> 4;
+			uint8 b_comp = (random_int & 0x000F) >> 0;
+			uint16 color = RGB15(r_comp, g_comp, b_comp) | (1 << 15);
 
 			// Add nb_particles_per_frame particle
 			for (int i = 0; i < nb_particles_per_frame; i++) {
