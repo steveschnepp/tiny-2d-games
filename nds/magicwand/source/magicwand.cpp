@@ -115,7 +115,9 @@ struct Particle {
 	}
 };
 
-std::list<Particle*> particles;
+typedef std::list<Particle*> particles_list;
+
+particles_list particles;
 
 void initVideo() {
     /*
@@ -275,7 +277,7 @@ int main(int argc, char *argv[]) {
 		}
 
 		// Moves every Particle
-		for(std::list<Particle*>::iterator i = particles.begin(); i != particles.end(); ++i) {
+		for(particles_list::iterator i = particles.begin(); i != particles.end(); ++i) {
 			Particle* particle = *i;
 			particle->move();
 			if (particle->is_offscreen) {
@@ -294,7 +296,7 @@ int main(int argc, char *argv[]) {
 
 		
 		// Draws every Particle on the back screen
-		for(std::list<Particle*>::iterator i = particles.begin(); i != particles.end(); ++i) {
+		for(particles_list::iterator i = particles.begin(); i != particles.end(); ++i) {
 			Particle* particle = *i;
 			particle->show();
 		}
