@@ -6,7 +6,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include <list>
+#include <ext/slist>
 
 const int MAX_X = SCREEN_WIDTH;
 const int MAX_Y = SCREEN_HEIGHT;
@@ -115,7 +115,7 @@ struct Particle {
 	}
 };
 
-typedef std::list<Particle*> particles_list;
+typedef __gnu_cxx::slist<Particle*> particles_list;
 
 particles_list particles;
 
@@ -272,18 +272,24 @@ int main(int argc, char *argv[]) {
 			// Add nb_particles_per_frame particle
 			for (int i = 0; i < nb_particles_per_frame; i++) {
 				Particle* particle = new Particle(touch.px, touch.py, color);
-				particles.push_back(particle);
+				particles.push_front(particle);
 			}
 		}
 
 		// Moves every Particle
+		particles_list::iterator i_old;
 		for(particles_list::iterator i = particles.begin(); i != particles.end(); ++i) {
 			Particle* particle = *i;
 			particle->move();
 			if (particle->is_offscreen) {
-				i = particles.erase(i);
+				if (i == particles.begin()) {
+					i = particles.erase(i);
+				} else {
+					i = particles.erase_after(i_old);
+				}
 				delete (particle);
 			} 
+			i_old = i;
 		}
 		
 		// Wait while DMA Channel 3 is BUSY
