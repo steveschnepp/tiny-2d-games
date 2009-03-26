@@ -8,12 +8,14 @@
 
 #include <ext/slist>
 
+#define DMA_COPY
+
 const int MAX_X = SCREEN_WIDTH;
 const int MAX_Y = SCREEN_HEIGHT;
 
 int gravity = 1;
-int escape_velocity = 64;
-int nb_particles_per_frame = 1;
+int escape_velocity = 640;
+int nb_particles_per_frame = 128;
 
 static uint16* front = VRAM_A;
 static uint16* back = VRAM_B;
@@ -84,20 +86,20 @@ struct Particle {
 		y += dy;
 
 		if (getX()<0) {
-			x = 0;
-			dx = 0;
+			setX(0);
+			dx = -dx;
 		}
 		if (getX() > MAX_X - 1) {
-			x = MAX_X - 1;
-			dx = 0;
+			setX(MAX_X - 1);
+			dx = -dx;
 		}
 		if (getY()<0) {
-			y = 0;
-			dy = 0;
+			setY(0);
+			dy = -dy;
 		}
 		if (getY() > MAX_Y - 1) {
 			y = MAX_Y - 1;
-			dy = 0;
+
 			is_offscreen = true;
 		}
 	}
@@ -292,14 +294,13 @@ int main(int argc, char *argv[]) {
 			i_old = i;
 		}
 		
+#ifdef DMA_COPY
 		// Wait while DMA Channel 3 is BUSY
 		if (dmaBusy(3)) {
-//			fprintf(stderr, "Wait while DMA Channel 3 is BUSY\n");
 			int count = 0;
 			while(dmaBusy(3)) { ++ count; }
-//			fprintf(stderr, "Waited %d cycles while DMA Channel 3 is BUSY\n", count);
 		}
-
+#endif
 		
 		// Draws every Particle on the back screen
 		for(particles_list::iterator i = particles.begin(); i != particles.end(); ++i) {
@@ -308,24 +309,14 @@ int main(int argc, char *argv[]) {
 		}
 
 
-//		int line_number = 0;	
-/*
-		iprintf("Frame : %d   \n", frame);
-		iprintf("Number of particles : %d   \n", particles.size());
-		iprintf("Gravity  : %d   \n", gravity);
-		iprintf("Escape velocity  : %d   \n", escape_velocity);
-		iprintf("nb_particles_per_frame : %d   \n", nb_particles_per_frame);
-*/
-		
 		// flip screens
 		flip_vram();
 
-		// erase back screen in async using DMA
-#define DMA_COPY
-#ifdef DMA_COPY
-		dmaFillWordsAsynch(RGB15(0,0,0), back, sizeof(uint16) * SCREEN_WIDTH * SCREEN_HEIGHT);
-#else
+		// erase back screen
 		uint16 col = RGB15(0, 0, 0) | BIT(15);
+#ifdef DMA_COPY
+		dmaFillWordsAsynch(&col, back, sizeof(uint16) * SCREEN_WIDTH * SCREEN_HEIGHT);
+#else
 		uint32 colcol = col | col << 16;
 		swiFastCopy(&colcol, back, 192*256*2/4 | COPY_MODE_FILL);
 #endif
