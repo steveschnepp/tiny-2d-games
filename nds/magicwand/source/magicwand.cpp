@@ -51,7 +51,7 @@ struct Particle {
 	int dx;
 	int dy;
 	bool is_offscreen;
-	const unsigned short int color;
+	unsigned short int color;
 
 	Particle(int initial_x, int initial_y, unsigned short int initial_color) 
 		: is_offscreen(false), color(initial_color)
@@ -121,7 +121,7 @@ struct Particle {
 
 //typedef __gnu_cxx::slist<Particle*> particles_list;
 //typedef std::list<Particle*> particles_list;
-typedef std::vector<Particle*> particles_list;
+typedef std::vector<Particle> particles_list;
 
 particles_list particles;
 
@@ -277,7 +277,7 @@ int main(int argc, char *argv[]) {
 
 			// Add nb_particles_per_frame particle
 			for (int i = 0; i < nb_particles_per_frame; i++) {
-				Particle* particle = new Particle(touch.px, touch.py, color);
+				Particle particle(touch.px, touch.py, color);
 				// particles.push_front(particle);
 				particles.push_back(particle);
 			}
@@ -286,17 +286,18 @@ int main(int argc, char *argv[]) {
 		// Moves every Particle
 		particles_list::iterator i_old;
 		for(particles_list::iterator i = particles.begin(); i != particles.end(); ++i) {
-			Particle* particle = *i;
-			particle->move();
-			if (particle->is_offscreen) {
+			Particle particle = *i;
+			particle.move();
+			if (particle.is_offscreen) {
 				if (i == particles.begin()) {
 					i = particles.erase(i);
 				} else {
 					//i = particles.erase_after(i_old);
 					i = particles.erase(i);
 				}
-				delete (particle);
+				// delete (particle);
 			} 
+			*i = particle;
 			i_old = i;
 		}
 		
@@ -310,8 +311,8 @@ int main(int argc, char *argv[]) {
 		
 		// Draws every Particle on the back screen
 		for(particles_list::iterator i = particles.begin(); i != particles.end(); ++i) {
-			Particle* particle = *i;
-			particle->show();
+			Particle particle = *i;
+			particle.show();
 		}
 
 
