@@ -7,6 +7,8 @@
 #include <stdlib.h>
 
 #include <ext/slist>
+#include <list>
+#include <vector>
 
 #define DMA_COPY
 
@@ -117,7 +119,9 @@ struct Particle {
 	}
 };
 
-typedef __gnu_cxx::slist<Particle*> particles_list;
+//typedef __gnu_cxx::slist<Particle*> particles_list;
+//typedef std::list<Particle*> particles_list;
+typedef std::vector<Particle*> particles_list;
 
 particles_list particles;
 
@@ -274,7 +278,8 @@ int main(int argc, char *argv[]) {
 			// Add nb_particles_per_frame particle
 			for (int i = 0; i < nb_particles_per_frame; i++) {
 				Particle* particle = new Particle(touch.px, touch.py, color);
-				particles.push_front(particle);
+				// particles.push_front(particle);
+				particles.push_back(particle);
 			}
 		}
 
@@ -287,7 +292,8 @@ int main(int argc, char *argv[]) {
 				if (i == particles.begin()) {
 					i = particles.erase(i);
 				} else {
-					i = particles.erase_after(i_old);
+					//i = particles.erase_after(i_old);
+					i = particles.erase(i);
 				}
 				delete (particle);
 			} 
