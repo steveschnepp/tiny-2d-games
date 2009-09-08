@@ -103,10 +103,11 @@ int main(int argc, char *argv[]) {
 			touchRead(&touch);
 		}
 
-		if (keys & KEY_UP) ship_y --; 
-		if (keys & KEY_DOWN) ship_y ++; 
-		if (keys & KEY_LEFT) ship_x --; 
-		if (keys & KEY_RIGHT) ship_x ++; 
+		const int ship_speed = 4;
+		if (keys & KEY_UP) ship_y -= ship_speed; 
+		if (keys & KEY_DOWN) ship_y += ship_speed; 
+		if (keys & KEY_LEFT) ship_x -= ship_speed;
+		if (keys & KEY_RIGHT) ship_x += ship_speed; 
 		
 		if (keys & KEY_L && (frame - last_frame_shoot) > 3) {
 			// Shoot
@@ -117,9 +118,14 @@ int main(int argc, char *argv[]) {
 				projectiles_shown[projectiles_idx] = true;
 				projectiles_x[projectiles_idx] = ship_x;
 				projectiles_y[projectiles_idx] = ship_y;
+
+				// Adding some randomness
+				const int aproximation_factor = 64;
+				int rnd_x = rand() % aproximation_factor - (aproximation_factor / 2);
+				int rnd_y = rand() % aproximation_factor - (aproximation_factor / 2);
 				
-				projectiles_dx[projectiles_idx] = touch.px;
-				projectiles_dy[projectiles_idx] = touch.py;
+				projectiles_dx[projectiles_idx] = touch.px + rnd_x;
+				projectiles_dy[projectiles_idx] = touch.py + rnd_y;
 				
 				projectiles_frame[projectiles_idx] = frame;
 
