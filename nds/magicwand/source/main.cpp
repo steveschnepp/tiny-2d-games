@@ -10,10 +10,7 @@
 #include <list>
 #include <vector>
 
-// #define DMA_COPY
-
-const int MAX_X = SCREEN_WIDTH;
-const int MAX_Y = SCREEN_HEIGHT;
+#include "nds_utils.h"
 
 int gravity = 1;
 int escape_velocity = 640;
@@ -34,10 +31,8 @@ void flip_vram()
 	}
 }
 
-int PA_CheckLid();
-void checkReset(int keys);
 
-static inline void dmaFillWordsAsynch(const void* src, void* dest, uint32 size) {
+static void dmaFillWordsAsynch(const void* src, void* dest, uint32 size) {
 	DMA_SRC(3) = (uint32)src;
 	DMA_DEST(3) = (uint32)dest;
 	DMA_CR(3) = DMA_SRC_FIX | DMA_COPY_WORDS | (size>>2);
@@ -66,20 +61,20 @@ struct Particle {
 		dy = (initial_velocity * cosLerp(initial_angle)) >> 12;
 	}
 
-	inline int getX() {
+	int getX() {
 		return x >> 8;
 	}
-	inline int getY() {
+	int getY() {
 		return y >> 8;
 	}
-	inline void setX(int new_x) {
-	x = new_x << 8;
+	void setX(int new_x) {
+		x = new_x << 8;
 	}
-	inline void setY(int new_y) {
+	void setY(int new_y) {
 		y = new_y << 8;
 	}
 
-	inline void move() {
+	void move() {
 		if (is_offscreen) return;
 		// Gravity
 		dy += gravity;
@@ -91,29 +86,29 @@ struct Particle {
 			setX(0);
 			dx = -dx;
 		}
-		if (getX() > MAX_X - 1) {
-			setX(MAX_X - 1);
+		if (getX() > SCREEN_WIDTH - 1) {
+			setX(SCREEN_WIDTH - 1);
 			dx = -dx;
 		}
 		if (getY()<0) {
 			setY(0);
 			dy = -dy;
 		}
-		if (getY() > MAX_Y - 1) {
-			setY(MAX_Y - 1);
+		if (getY() > SCREEN_HEIGHT - 1) {
+			setY(SCREEN_HEIGHT - 1);
 
 			is_offscreen = true;
 		}
 	}
 
-	inline void Put8bitPixel(int screen_x, int screen_y, unsigned short int color) {
+	void Put8bitPixel(int screen_x, int screen_y, unsigned short int color) {
 		back[screen_x + screen_y * SCREEN_WIDTH] = color;
 	}
 
-	inline void hide() {
+	void hide() {
 		Put8bitPixel(getX(), getY(), RGB15(0,0,0));
 	}
-	inline void show() {
+	void show() {
 		if (is_offscreen) return;
 		Put8bitPixel(getX(), getY(), color);
 	}
@@ -300,14 +295,6 @@ int main(int argc, char *argv[]) {
 			//i_old = i;
 		}
 		
-#ifdef DMA_COPY
-		// Wait while DMA Channel 3 is BUSY
-		if (dmaBusy(3)) {
-			int count = 0;
-			while(dmaBusy(3)) { ++ count; }
-		}
-#endif
-		
 		// Draws every Particle on the back screen
 		for(particles_list::iterator i = particles.begin(); i != particles.end(); ++i) {
 			Particle* particle = *i;
@@ -320,12 +307,8 @@ int main(int argc, char *argv[]) {
 
 		// erase back screen
 		uint16 col = RGB15(0, 0, 0) | BIT(15);
-#ifdef DMA_COPY
-		dmaFillWordsAsynch(&col, back, sizeof(uint16) * SCREEN_WIDTH * SCREEN_HEIGHT);
-#else
 		uint32 colcol = col | col << 16;
 		swiFastCopy(&colcol, back, 192*256*2/4 | COPY_MODE_FILL);
-#endif
 		
 		PA_CheckLid();
 		swiWaitForVBlank();
@@ -333,32 +316,3 @@ int main(int argc, char *argv[]) {
 	
 	return 0;
 } // End of main()
-
-inline bool PA_LidClosed() {
-	return keysHeld() & KEY_LID; 
-}
-
-inline int PA_CheckLid() {
-	if (!PA_LidClosed()) {
-		return 0;
-	}
-
-	// Shutdown everything :p
-	powerOff(POWER_ALL_2D); 
-
-	// Wait for the lid to be opened again...
-	while(PA_LidClosed()) {
-		swiWaitForVBlank();
-		scanKeys();
-	}
-
-	// Return the power !
-	powerOn(POWER_ALL_2D);
-	return 1;
-}
-
-inline void checkReset(int keys) {
-	if (keys | KEY_A | KEY_B | KEY_X | KEY_Y | KEY_L | KEY_R) {
-		swiSoftReset();
-	}
-}
