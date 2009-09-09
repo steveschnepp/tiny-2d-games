@@ -61,6 +61,12 @@ int get_next_free_projectile(bool projectiles_shown[]) {
 	return -1;
 }
 
+int in_limit(int value, int min, int max) {
+	if (value < min) value = min;
+	if (value > max) value = max;
+	return value;
+}
+
 bool debug = false;
 
 // Function: main()
@@ -84,6 +90,7 @@ int main(int argc, char *argv[]) {
 		static int ship_x = 64;
 		static int ship_y = 64;
 		
+		// TODO - Should use a proper projectile struct
 		static bool projectiles_shown[max_projectiles] = { false };
 		static int projectiles_x[max_projectiles];
 		static int projectiles_y[max_projectiles];
@@ -103,11 +110,12 @@ int main(int argc, char *argv[]) {
 			touchRead(&touch);
 		}
 
+		// Movements of the ship
 		const int ship_speed = 4;
-		if (keys & KEY_UP) ship_y -= ship_speed; 
-		if (keys & KEY_DOWN) ship_y += ship_speed; 
-		if (keys & KEY_LEFT) ship_x -= ship_speed;
-		if (keys & KEY_RIGHT) ship_x += ship_speed; 
+		if (keys & KEY_UP) ship_y = in_limit(ship_y + ship_speed, 0, SCREEN_HEIGHT); 
+		if (keys & KEY_DOWN) ship_y = in_limit(ship_y - ship_speed, 0, SCREEN_HEIGHT); 
+		if (keys & KEY_LEFT) ship_x = in_limit(ship_x - ship_speed, 0, SCREEN_WIDTH); 
+		if (keys & KEY_RIGHT) ship_x = in_limit(ship_x + ship_speed, 0, SCREEN_WIDTH);
 		
 		if (keys & KEY_L && (frame - last_frame_shoot) > 3) {
 			// Shoot
