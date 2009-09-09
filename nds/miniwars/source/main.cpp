@@ -19,16 +19,24 @@ u16* ship;
 u16* crossHair;
 
 const int max_projectiles = 32;
-u16* projectiles[max_projectiles];
+struct Projectile {
+	bool is_shown;
+	int x;
+	int y;
+	int dx;
+	int dy;
+	int frame;
+	u16* gfx;
+};
 
-void initSprite() {
+void initSprite(Projectile projectiles[]) {
 	oamInit(&oamMain, SpriteMapping_1D_32, false);
 	// oamAllocateGfx is like malloc(), but for sprites
 	ship = oamAllocateGfx(&oamMain, SpriteSize_16x16, SpriteColorFormat_256Color);
 	crossHair = oamAllocateGfx(&oamMain, SpriteSize_16x16, SpriteColorFormat_256Color);
 
-	for (int i = 0; i < max_projectiles; i ++) {
-		projectiles[i] = oamAllocateGfx(&oamMain, SpriteSize_16x16, SpriteColorFormat_256Color);
+	for (int idx = 0; idx < max_projectiles; idx++) {
+		projectiles[idx].gfx = oamAllocateGfx(&oamMain, SpriteSize_16x16, SpriteColorFormat_256Color);
 	}
 
 	// Create the main palette
@@ -46,17 +54,17 @@ void initSprite() {
                 crossHair[i] = 3 | (1 << 8);
         }
 	
-	for (int idx = 0; idx < max_projectiles; idx ++) {
+	for (int idx = 0; idx < max_projectiles; idx++) {
 		for (int i = 0; i < 16 * 16; i++) {
-			projectiles[idx][i] = 2 | (1 << 8);
+			projectiles[idx].gfx[i] = 2 | (1 << 8);
 		}
 	}
 }
 
-int get_next_free_projectile(bool projectiles_shown[]) {
+int get_next_free_projectile(Projectile projectiles[]) {
 	// Linear search 
 	for (int idx = 0; idx < max_projectiles; idx ++) { 
-		if (! projectiles_shown[idx]) return idx;
+		if (! projectiles[idx].is_shown) return idx;
 	}
 	return -1;
 }
@@ -82,21 +90,15 @@ int main(int argc, char *argv[]) {
 	
 	BG_PALETTE_SUB[255] = RGB15(31,31,31);	//by default font will be rendered with color 255
 
-	initSprite();
+	Projectile projectiles[max_projectiles];
+	initSprite(projectiles);
 	
 	// Infinite loop to keep the program running
 	for (int frame = 0; true; frame++) {
 		static touchPosition touch;
 		static int ship_x = 64;
 		static int ship_y = 64;
-		
-		// TODO - Should use a proper projectile struct
-		static bool projectiles_shown[max_projectiles] = { false };
-		static int projectiles_x[max_projectiles];
-		static int projectiles_y[max_projectiles];
-		static int projectiles_dx[max_projectiles];
-		static int projectiles_dy[max_projectiles];
-		static int projectiles_frame[max_projectiles];
+
 		static int last_frame_shoot = frame;
 
 		scanKeys();
@@ -119,23 +121,23 @@ int main(int argc, char *argv[]) {
 		
 		if (keys & KEY_L && (frame - last_frame_shoot) > 3) {
 			// Shoot
-			int projectiles_idx = get_next_free_projectile(projectiles_shown);
+			int projectiles_idx = get_next_free_projectile(projectiles);
 			if (projectiles_idx == -1) {
 				// No projectile left
 			} else {
-				projectiles_shown[projectiles_idx] = true;
-				projectiles_x[projectiles_idx] = ship_x;
-				projectiles_y[projectiles_idx] = ship_y;
+				projectiles[projectiles_idx].is_shown = true;
+				projectiles[projectiles_idx].x = ship_x;
+				projectiles[projectiles_idx].y = ship_y;
 
 				// Adding some randomness
 				const int aproximation_factor = 64;
 				int rnd_x = rand() % aproximation_factor - (aproximation_factor / 2);
 				int rnd_y = rand() % aproximation_factor - (aproximation_factor / 2);
 				
-				projectiles_dx[projectiles_idx] = touch.px + rnd_x;
-				projectiles_dy[projectiles_idx] = touch.py + rnd_y;
+				projectiles[projectiles_idx].dx = touch.px + rnd_x;
+				projectiles[projectiles_idx].dy = touch.py + rnd_y;
 				
-				projectiles_frame[projectiles_idx] = frame;
+				projectiles[projectiles_idx].frame = frame;
 
 				last_frame_shoot = frame;
 			}
@@ -170,19 +172,19 @@ int main(int argc, char *argv[]) {
 
 		const int nb_frames_to_target = 33;	
 		for (int idx = 0; idx < max_projectiles; idx ++) {
-			if (! projectiles_shown[idx]) {
+			if (! projectiles[idx].is_shown) {
 				continue;
 			}
 
-			int frames_left = (projectiles_frame[idx] + nb_frames_to_target) - frame;
+			int frames_left = (projectiles[idx].frame + nb_frames_to_target) - frame;
 			if(debug) printf("[%d][%d] frames left [%d]\n", frame, idx, frames_left);
 			if (frames_left <= 0) {
 				// hide the sprite
-				projectiles_shown[idx] = false;
+				projectiles[idx].is_shown = false;
 			}
 
-			int current_x = projectiles_dx[idx] - (projectiles_dx[idx] - projectiles_x[idx]) * (frames_left) / nb_frames_to_target;
-			int current_y = projectiles_dy[idx] - (projectiles_dy[idx] - projectiles_y[idx]) * (frames_left) / nb_frames_to_target;
+			int current_x = projectiles[idx].dx - (projectiles[idx].dx - projectiles[idx].x) * (frames_left) / nb_frames_to_target;
+			int current_y = projectiles[idx].dy - (projectiles[idx].dy - projectiles[idx].y) * (frames_left) / nb_frames_to_target;
 
 			oamSet(&oamMain, //main graphics engine context
 				2 + idx,        //oam index (0 to 127)  
@@ -191,10 +193,10 @@ int main(int argc, char *argv[]) {
 				0,                    //this is the palette index if multiple palettes or the alpha value if bmp sprite     
 				SpriteSize_16x16,
 				SpriteColorFormat_256Color,
-				projectiles[idx],                 //pointer to the loaded graphics
+				projectiles[idx].gfx, //pointer to the loaded graphics
 				-1,                  //sprite rotation data  
 				false,               //double the size when rotating?
-				! projectiles_shown[idx]  //hide the sprite?
+				! projectiles[idx].is_shown  //hide the sprite?
 			);
 		}
 
