@@ -1,5 +1,8 @@
 // MiniWars - A stylised 2D FPS
 // Copyright 2008-2009 Steve Schnepp <steve.schnepp@pwkf.org>
+//
+// The code is a little bit messy, but it's rather a work-in-progress than a 
+// finished product. It will clean itself through the various refactorings
 
 // Includes
 #include <nds.h>
@@ -15,9 +18,6 @@ void initVideo() {
 	videoSetModeSub(MODE_0_2D | DISPLAY_BG0_ACTIVE);
 }
 
-u16* ship;
-u16* crossHair;
-
 const int max_projectiles = 32;
 struct Projectile {
 	bool is_shown;
@@ -27,16 +27,21 @@ struct Projectile {
 	int dy;
 	int frame;
 	u16* gfx;
+	int idx_sprite;
 };
 
-void initSprite(Projectile projectiles[]) {
+void initSprites(Projectile& ship, Projectile& crosshair_pointed, Projectile& crosshair_current, Projectile projectiles[]) {
 	oamInit(&oamMain, SpriteMapping_1D_32, false);
-	// oamAllocateGfx is like malloc(), but for sprites
-	ship = oamAllocateGfx(&oamMain, SpriteSize_16x16, SpriteColorFormat_256Color);
-	crossHair = oamAllocateGfx(&oamMain, SpriteSize_16x16, SpriteColorFormat_256Color);
+		
+	int idx_sprite = 0; // global variable, so don't need to think about it again. But should NEVER go > 127
 
+	// Memory allocation for sprites using oamAllocateGfx. it's like malloc(), but for sprites
+	ship.gfx = oamAllocateGfx(&oamMain, SpriteSize_16x16, SpriteColorFormat_256Color); ship.idx_sprite = idx_sprite++;
+	crosshair_current.gfx = oamAllocateGfx(&oamMain, SpriteSize_16x16, SpriteColorFormat_256Color); crosshair_current.idx_sprite = idx_sprite++;
+	crosshair_pointed.gfx = oamAllocateGfx(&oamMain, SpriteSize_16x16, SpriteColorFormat_256Color); crosshair_pointed.idx_sprite = idx_sprite++;
 	for (int idx = 0; idx < max_projectiles; idx++) {
 		projectiles[idx].gfx = oamAllocateGfx(&oamMain, SpriteSize_16x16, SpriteColorFormat_256Color);
+		projectiles[idx].idx_sprite = idx_sprite++;		
 	}
 
 	// Create the main palette
@@ -50,8 +55,9 @@ void initSprite(Projectile projectiles[]) {
 
 	// Fill the sprites with indexed colors
 	for (int i = 0; i < 16 * 16 / 2; i++) {
-                ship[i] = 1 | (1 << 8);
-                crossHair[i] = 3 | (1 << 8);
+                ship.gfx[i] = 1 | (1 << 8);
+                crosshair_pointed.gfx[i] = 3 | (1 << 8);
+                crosshair_current.gfx[i] = 3 | (1 << 8);
         }
 	
 	for (int idx = 0; idx < max_projectiles; idx++) {
@@ -91,7 +97,14 @@ int main(int argc, char *argv[]) {
 	BG_PALETTE_SUB[255] = RGB15(31,31,31);	//by default font will be rendered with color 255
 
 	Projectile projectiles[max_projectiles];
-	initSprite(projectiles);
+
+	// Using Projectile for everything, since it's quite generic
+	Projectile crosshair_pointed;
+	Projectile crosshair_current;
+	Projectile ship;
+
+	initSprites(ship, crosshair_pointed, crosshair_current, projectiles);
+	ship.is_shown = true;
 	
 	// Infinite loop to keep the program running
 	for (int frame = 0; true; frame++) {
@@ -110,14 +123,20 @@ int main(int argc, char *argv[]) {
 		int keys = keysHeld();
                 if (keys & KEY_TOUCH) {
 			touchRead(&touch);
+			crosshair_pointed.x = touch.px;
+			crosshair_pointed.y = touch.py;
+			crosshair_pointed.is_shown = true;
+		} else {
+			crosshair_pointed.is_shown = false;
 		}
 
 		// Movements of the ship
+		const int ship_size = 16;
 		const int ship_speed = 4;
-		if (keys & KEY_UP) ship_y = in_limit(ship_y + ship_speed, 0, SCREEN_HEIGHT); 
-		if (keys & KEY_DOWN) ship_y = in_limit(ship_y - ship_speed, 0, SCREEN_HEIGHT); 
-		if (keys & KEY_LEFT) ship_x = in_limit(ship_x - ship_speed, 0, SCREEN_WIDTH); 
-		if (keys & KEY_RIGHT) ship_x = in_limit(ship_x + ship_speed, 0, SCREEN_WIDTH);
+		if (keys & KEY_UP) ship_y = in_limit(ship_y - ship_speed, 0, SCREEN_HEIGHT - ship_size); 
+		if (keys & KEY_DOWN) ship_y = in_limit(ship_y + ship_speed, 0, SCREEN_HEIGHT - ship_size); 
+		if (keys & KEY_LEFT) ship_x = in_limit(ship_x - ship_speed, 0, SCREEN_WIDTH - ship_size); 
+		if (keys & KEY_RIGHT) ship_x = in_limit(ship_x + ship_speed, 0, SCREEN_WIDTH - ship_size);
 		
 		if (keys & KEY_L && (frame - last_frame_shoot) > 3) {
 			// Shoot
@@ -134,8 +153,8 @@ int main(int argc, char *argv[]) {
 				int rnd_x = rand() % aproximation_factor - (aproximation_factor / 2);
 				int rnd_y = rand() % aproximation_factor - (aproximation_factor / 2);
 				
-				projectiles[projectiles_idx].dx = touch.px + rnd_x;
-				projectiles[projectiles_idx].dy = touch.py + rnd_y;
+				projectiles[projectiles_idx].dx = crosshair_pointed.x + rnd_x;
+				projectiles[projectiles_idx].dy = crosshair_pointed.y + rnd_y;
 				
 				projectiles[projectiles_idx].frame = frame;
 
@@ -144,30 +163,44 @@ int main(int argc, char *argv[]) {
 			if(debug) printf("[%d]SHT[%d,%d][%d,%d][%d]\n", frame, ship_x, ship_y, touch.px, touch.py, projectiles_idx);
 		}
 
+
 		oamSet(&oamMain, //main graphics engine context
-                        0,        //oam index (0 to 127)  
+                        ship.idx_sprite,        //oam index (0 to 127)  
                         ship_x, ship_y,   //x and y pixle location of the sprite
                         0,                    //priority, lower renders last (on top)
                         0,                    //this is the palette index if multiple palettes or the alpha value if bmp sprite     
                         SpriteSize_16x16,
                         SpriteColorFormat_256Color,
-                        ship,                //pointer to the loaded graphics
+                        ship.gfx,                //pointer to the loaded graphics
                         -1,                  //sprite rotation data  
                         false,               //double the size when rotating?
-                        false                //hide the sprite?
+                        !ship.is_shown                //hide the sprite?
 		);
 
 		oamSet(&oamMain, //main graphics engine context
-                        1,        //oam index (0 to 127)  
-                        touch.px, touch.py,   //x and y pixle location of the sprite
+                	crosshair_current.idx_sprite,        //oam index (0 to 127)  
+                        crosshair_current.x, crosshair_current.y,   //x and y pixle location of the sprite
                         0,                    //priority, lower renders last (on top)
                         0,                    //this is the palette index if multiple palettes or the alpha value if bmp sprite     
                         SpriteSize_16x16,
                         SpriteColorFormat_256Color,
-                        crossHair,                 //pointer to the loaded graphics
+                        crosshair_pointed.gfx, //pointer to the loaded graphics
                         -1,                  //sprite rotation data  
                         false,               //double the size when rotating?
-                        !(keys & KEY_TOUCH)  //hide the sprite?
+                        !crosshair_current.is_shown  //hide the sprite?
+		);
+		
+		oamSet(&oamMain, //main graphics engine context
+                        crosshair_pointed.idx_sprite,        //oam index (0 to 127)  
+                        crosshair_pointed.x, crosshair_pointed.y,   //x and y pixle location of the sprite
+                        0,                    //priority, lower renders last (on top)
+                        0,                    //this is the palette index if multiple palettes or the alpha value if bmp sprite     
+                        SpriteSize_16x16,
+                        SpriteColorFormat_256Color,
+                        crosshair_pointed.gfx, //pointer to the loaded graphics
+                        -1,                  //sprite rotation data  
+                        false,               //double the size when rotating?
+                        !crosshair_pointed.is_shown  //hide the sprite?
 		);
 
 		const int nb_frames_to_target = 33;	
@@ -187,7 +220,7 @@ int main(int argc, char *argv[]) {
 			int current_y = projectiles[idx].dy - (projectiles[idx].dy - projectiles[idx].y) * (frames_left) / nb_frames_to_target;
 
 			oamSet(&oamMain, //main graphics engine context
-				2 + idx,        //oam index (0 to 127)  
+				projectiles[idx].idx_sprite,        //oam index (0 to 127)  
 				current_x, current_y,   //x and y pixle location of the sprite
 				idx,                    //priority, lower renders last (on top)
 				0,                    //this is the palette index if multiple palettes or the alpha value if bmp sprite     
