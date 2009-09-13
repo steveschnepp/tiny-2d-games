@@ -20,11 +20,12 @@ void initVideo() {
 
 const int max_projectiles = 32;
 struct Projectile {
+	Projectile() : is_shown(false) {};
 	bool is_shown;
-	int x;
-	int y;
-	int dx;
-	int dy;
+	float x;
+	float y;
+	float dx;
+	float dy;
 	int frame;
 	u16* gfx;
 	int idx_sprite;
@@ -52,6 +53,7 @@ void initSprites(Projectile& ship, Projectile& crosshair_pointed, Projectile& cr
 	SPRITE_PALETTE[1] = RGB15(31, 0, 0);
 	SPRITE_PALETTE[2] = RGB15(0, 31, 0);
 	SPRITE_PALETTE[3] = RGB15(0, 0, 31);
+	SPRITE_PALETTE[4] = RGB15(0, 0, 05);
 
 	const int sprite_x = 8;
 	const int sprite_y = 8;
@@ -62,7 +64,7 @@ void initSprites(Projectile& ship, Projectile& crosshair_pointed, Projectile& cr
 			int offset = j * sprite_x/2 + i;
                 	ship.gfx[offset] = 1 | (1 << 8);
 	                crosshair_pointed.gfx[offset] = 3 | (3 << 8);
-        	        crosshair_current.gfx[offset] = 3 | (3 << 8);
+        	        crosshair_current.gfx[offset] = 4 | (4 << 8);
 		}
         }
 
@@ -91,6 +93,13 @@ int in_limit(int value, int min, int max) {
 	if (value < min) value = min;
 	if (value > max) value = max;
 	return value;
+}
+
+int sign(int value) {
+	// return (value > 0) ? 1 : ( (value == 0) ? 0 : -1 );
+	if (value == 0) return 0;
+	if (value > 0) return 1;
+	return -1;
 }
 
 bool debug = false;
@@ -138,8 +147,24 @@ int main(int argc, char *argv[]) {
 			crosshair_pointed.x = touch.px;
 			crosshair_pointed.y = touch.py;
 			crosshair_pointed.is_shown = true;
+		
+			// Updating the goal of the current crosshair
+			crosshair_current.dx = crosshair_pointed.x;
+			crosshair_current.dy = crosshair_pointed.y;
 		} else {
 			crosshair_pointed.is_shown = false;
+		}
+
+		if(debug) printf("c_c.i_s = %s\n", crosshair_current.is_shown ? "true" : "false");
+		if ((keys & KEY_TOUCH) && (! crosshair_current.is_shown)) {
+			// We didn't show it yet, so just imagine it pops here
+			crosshair_current.x = crosshair_current.dx;
+			crosshair_current.y = crosshair_current.dy;
+			crosshair_current.is_shown = true;
+		} else {
+			// Slowly move the crosshair pointed to current
+			crosshair_current.x += 2 * sign(crosshair_current.dx - crosshair_current.x);
+			crosshair_current.y += 2 * sign(crosshair_current.dy - crosshair_current.y);
 		}
 
 		// Movements of the ship
@@ -162,11 +187,11 @@ int main(int argc, char *argv[]) {
 
 				// Adding some randomness
 				const int aproximation_factor = 64;
-				int rnd_x = rand() % aproximation_factor - (aproximation_factor / 2);
-				int rnd_y = rand() % aproximation_factor - (aproximation_factor / 2);
+				float rnd_x = rand() % aproximation_factor - (aproximation_factor / 2);
+				float rnd_y = rand() % aproximation_factor - (aproximation_factor / 2);
 				
-				projectiles[projectiles_idx].dx = crosshair_pointed.x + rnd_x;
-				projectiles[projectiles_idx].dy = crosshair_pointed.y + rnd_y;
+				projectiles[projectiles_idx].dx = crosshair_current.x + rnd_x;
+				projectiles[projectiles_idx].dy = crosshair_current.y + rnd_y;
 				
 				projectiles[projectiles_idx].frame = frame;
 
