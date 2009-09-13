@@ -36,12 +36,12 @@ void initSprites(Projectile& ship, Projectile& crosshair_pointed, Projectile& cr
 	int idx_sprite = 0; // global variable, so don't need to think about it again. But should NEVER go > 127
 
 	// Memory allocation for sprites using oamAllocateGfx. it's like malloc(), but for sprites
-	ship.gfx = oamAllocateGfx(&oamMain, SpriteSize_16x16, SpriteColorFormat_256Color); ship.idx_sprite = idx_sprite++;
-	crosshair_current.gfx = oamAllocateGfx(&oamMain, SpriteSize_16x16, SpriteColorFormat_256Color); crosshair_current.idx_sprite = idx_sprite++;
-	crosshair_pointed.gfx = oamAllocateGfx(&oamMain, SpriteSize_16x16, SpriteColorFormat_256Color); crosshair_pointed.idx_sprite = idx_sprite++;
+	ship.gfx = oamAllocateGfx(&oamMain, SpriteSize_8x8, SpriteColorFormat_256Color); ship.idx_sprite = idx_sprite++;
+	crosshair_current.gfx = oamAllocateGfx(&oamMain, SpriteSize_8x8, SpriteColorFormat_256Color); crosshair_current.idx_sprite = idx_sprite++;
+	crosshair_pointed.gfx = oamAllocateGfx(&oamMain, SpriteSize_8x8, SpriteColorFormat_256Color); crosshair_pointed.idx_sprite = idx_sprite++;
 	for (int idx = 0; idx < max_projectiles; idx++) {
-		projectiles[idx].gfx = oamAllocateGfx(&oamMain, SpriteSize_16x16, SpriteColorFormat_256Color);
-		projectiles[idx].idx_sprite = idx_sprite++;		
+		projectiles[idx].gfx = oamAllocateGfx(&oamMain, SpriteSize_8x8, SpriteColorFormat_256Color);
+		projectiles[idx].idx_sprite = idx_sprite++;
 	}
 
 	// Create the main palette
@@ -53,16 +53,28 @@ void initSprites(Projectile& ship, Projectile& crosshair_pointed, Projectile& cr
 	SPRITE_PALETTE[2] = RGB15(0, 31, 0);
 	SPRITE_PALETTE[3] = RGB15(0, 0, 31);
 
+	const int sprite_x = 8;
+	const int sprite_y = 8;
+
 	// Fill the sprites with indexed colors
-	for (int i = 0; i < 16 * 16 / 2; i++) {
-                ship.gfx[i] = 1 | (1 << 8);
-                crosshair_pointed.gfx[i] = 3 | (1 << 8);
-                crosshair_current.gfx[i] = 3 | (1 << 8);
+	for (int j = 0; j < sprite_y; j++) {
+		for (int i = 0; i < sprite_x/2; i++) {
+			int offset = j * sprite_x/2 + i;
+                	ship.gfx[offset] = 1 | (1 << 8);
+	                crosshair_pointed.gfx[offset] = 3 | (3 << 8);
+        	        crosshair_current.gfx[offset] = 3 | (3 << 8);
+		}
         }
+
+	const int projectile_x = sprite_x / 2;
+	const int projectile_y = sprite_y / 2;
 	
 	for (int idx = 0; idx < max_projectiles; idx++) {
-		for (int i = 0; i < 16 * 16; i++) {
-			projectiles[idx].gfx[i] = 2 | (1 << 8);
+		for (int j = 0; j < projectile_y; j++) {
+			for (int i = 0; i < projectile_x/2; i++) {
+				int offset = j * sprite_x/2 + i;
+				projectiles[idx].gfx[offset] = 2 | (2 << 8);
+			}
 		}
 	}
 }
@@ -131,7 +143,7 @@ int main(int argc, char *argv[]) {
 		}
 
 		// Movements of the ship
-		const int ship_size = 16;
+		const int ship_size = 8;
 		const int ship_speed = 4;
 		if (keys & KEY_UP) ship_y = in_limit(ship_y - ship_speed, 0, SCREEN_HEIGHT - ship_size); 
 		if (keys & KEY_DOWN) ship_y = in_limit(ship_y + ship_speed, 0, SCREEN_HEIGHT - ship_size); 
@@ -169,7 +181,7 @@ int main(int argc, char *argv[]) {
                         ship_x, ship_y,   //x and y pixle location of the sprite
                         0,                    //priority, lower renders last (on top)
                         0,                    //this is the palette index if multiple palettes or the alpha value if bmp sprite     
-                        SpriteSize_16x16,
+                        SpriteSize_8x8,
                         SpriteColorFormat_256Color,
                         ship.gfx,                //pointer to the loaded graphics
                         -1,                  //sprite rotation data  
@@ -182,7 +194,7 @@ int main(int argc, char *argv[]) {
                         crosshair_current.x, crosshair_current.y,   //x and y pixle location of the sprite
                         0,                    //priority, lower renders last (on top)
                         0,                    //this is the palette index if multiple palettes or the alpha value if bmp sprite     
-                        SpriteSize_16x16,
+                        SpriteSize_8x8,
                         SpriteColorFormat_256Color,
                         crosshair_pointed.gfx, //pointer to the loaded graphics
                         -1,                  //sprite rotation data  
@@ -195,7 +207,7 @@ int main(int argc, char *argv[]) {
                         crosshair_pointed.x, crosshair_pointed.y,   //x and y pixle location of the sprite
                         0,                    //priority, lower renders last (on top)
                         0,                    //this is the palette index if multiple palettes or the alpha value if bmp sprite     
-                        SpriteSize_16x16,
+                        SpriteSize_8x8,
                         SpriteColorFormat_256Color,
                         crosshair_pointed.gfx, //pointer to the loaded graphics
                         -1,                  //sprite rotation data  
@@ -224,7 +236,7 @@ int main(int argc, char *argv[]) {
 				current_x, current_y,   //x and y pixle location of the sprite
 				idx,                    //priority, lower renders last (on top)
 				0,                    //this is the palette index if multiple palettes or the alpha value if bmp sprite     
-				SpriteSize_16x16,
+				SpriteSize_8x8,
 				SpriteColorFormat_256Color,
 				projectiles[idx].gfx, //pointer to the loaded graphics
 				-1,                  //sprite rotation data  
