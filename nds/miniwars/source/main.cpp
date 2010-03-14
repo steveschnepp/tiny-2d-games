@@ -63,7 +63,8 @@ int main(int argc, char *argv[]) {
 	
 	consoleDemoInit();
 	
-	BG_PALETTE_SUB[255] = RGB15(31,31,31);	//by default font will be rendered with color 255
+	//by default font will be rendered with color 255
+	BG_PALETTE_SUB[255] = RGB15(31,31,31);	
 
 	Projectile projectiles[max_projectiles];
 
@@ -120,7 +121,7 @@ int main(int argc, char *argv[]) {
 			accuracy = 64;
 		}
 
-		accuracy--; if (accuracy < 0) accuracy = 0;
+		if (accuracy > 0) accuracy--;
 		
 		if ((keys & KEY_L)) {
 			// Shoot
@@ -130,10 +131,10 @@ int main(int argc, char *argv[]) {
 			} else {
 				MovableSprite& projectile = projectiles[projectiles_idx];
 				projectile.is_shown = true;
-				projectile.x = ship.x;
-				projectile.y = ship.y;
-				projectile.dest_x = crosshair.x;
-				projectile.dest_y = crosshair.y;
+				projectile.x = ship.dest_x;
+				projectile.y = ship.dest_x;
+				projectile.dest_x = crosshair.dest_x;
+				projectile.dest_y = crosshair.dest_y;
 
 				// Adding some randomness
 				if (accuracy > 0) {
@@ -176,11 +177,16 @@ int main(int argc, char *argv[]) {
 		);
 
 		oamSet(&oamMain, //main graphics engine context
-                        crosshair.idx_sprite,        //oam index (0 to 127)  
+			// oam index (0 to 127)  
+                        crosshair.idx_sprite,        
+			// x and y pixel location of the sprite
                         crosshair.getScreenX(frame), 
-			crosshair.getScreenY(frame),   //x and y pixle location of the sprite
-                        0,                    //priority, lower renders last (on top)
-                        0,                    //this is the palette index if multiple palettes or the alpha value if bmp sprite     
+			crosshair.getScreenY(frame),   
+			// priority, lower renders last (on top)
+                        0,                    
+			// this is the palette index if multiple palettes 
+			// or the alpha value if bmp sprite     
+                        0,                    
                         crosshair.size,
                         SpriteColorFormat_256Color,
                         crosshair.gfx, //pointer to the loaded graphics

@@ -14,7 +14,7 @@ void Ship::fillSprite() {
 	for (int j = 0; j < sprite_y; j++) {
 		for (int i = 0; i < sprite_x/2; i++) {
 			int offset = j * sprite_x/2 + i;
-                	this->gfx[offset] = this->idx_sprite * 7;
+                	this->gfx[offset] = 1;
 		}
         }
 }
