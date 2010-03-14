@@ -17,7 +17,7 @@ MovableSprite::MovableSprite(SpriteSize size)
 		// Create the main palette
 		for (int color = 0; color < 256; color++) {
 			SPRITE_PALETTE[color] = (color << 7) | (1 << 15);
-		}
+		};
 			
 		SPRITE_PALETTE[1] = RGB15(31, 0, 0);
 		SPRITE_PALETTE[2] = RGB15(0, 31, 0);
@@ -42,19 +42,47 @@ void MovableSprite::setDestination(float x, float y, int current_frame, int dest
 	this->dest_frame = dest_frame;
 }
 
-int MovableSprite::getScreenX(int current_frame) {
+int MovableSprite::getScreenX(int current_frame) const {
 	int nb_frames_to_target = dest_frame - frame;
+	if (nb_frames_to_target <= 0) {
+		return dest_x;
+	}
 
 	return dest_x - (dest_x - x) * getFramesLeft(current_frame) / nb_frames_to_target;
 }
 
-int MovableSprite::getScreenY(int current_frame) {
+int MovableSprite::getScreenY(int current_frame) const {
 	int nb_frames_to_target = dest_frame - frame;
+	if (nb_frames_to_target <= 0) {
+		return dest_y;
+	}
 
 	return dest_y - (dest_y - y) * getFramesLeft(current_frame) / nb_frames_to_target;
 }
 
-int MovableSprite::getFramesLeft(int current_frame) {
+int MovableSprite::getFramesLeft(int current_frame) const {
 	return dest_frame - current_frame;
 }
 
+int MovableSprite::getSizeX() const {
+	switch (size) {
+		case SpriteSize_8x8:
+			return 8;
+		case SpriteSize_64x64:
+			return 64;
+		default:
+			return 0;
+	}
+}
+
+
+int MovableSprite::getSizeY() const {
+	switch (size) {
+		case SpriteSize_8x8:
+			return 8;
+		case SpriteSize_64x64:
+			return 64;
+		default:
+			return 0;
+	}
+}

@@ -71,6 +71,8 @@ int main(int argc, char *argv[]) {
 	Ship ship;
 
 	ship.is_shown = true;
+	ship.frame = 0;
+	ship.dest_frame = 0;
 	
 	// Infinite loop to keep the program running
 	for (unsigned int frame = 0; true; frame++) {
@@ -87,8 +89,11 @@ int main(int argc, char *argv[]) {
 		int keys = keysHeld();
                 if (keys & KEY_TOUCH) {
 			touchRead(&touch);
-			crosshair.x = touch.px;
-			crosshair.y = touch.py;
+			crosshair.setDestination(
+				touch.px,
+				touch.py,
+				frame, frame
+			);
 			crosshair.is_shown = true;
 		} else {
 			crosshair.is_shown = false;
@@ -96,26 +101,25 @@ int main(int argc, char *argv[]) {
 		}
 
 		// Movements of the ship
-		const int ship_size = 64;
 		const int ship_speed = 4;
 		static int accuracy = 0;
+			
 		if (keys & KEY_UP) {
-			ship.y = in_limit(ship.y - ship_speed, 0, SCREEN_HEIGHT - ship_size); 
+			ship.dest_y = in_limit(ship.dest_y - ship_speed, 0, SCREEN_HEIGHT - ship.getSizeY()); 
+			accuracy = 64;
+		} else if (keys & KEY_DOWN) {
+			ship.dest_y = in_limit(ship.dest_y + ship_speed, 0, SCREEN_HEIGHT - ship.getSizeY()); 
 			accuracy = 64;
 		}
-		if (keys & KEY_DOWN) {
-			ship.y = in_limit(ship.y + ship_speed, 0, SCREEN_HEIGHT - ship_size); 
-			accuracy = 64;
-		}
+
 		if (keys & KEY_LEFT) {
-			ship.x = in_limit(ship.x - ship_speed, 0, SCREEN_WIDTH - ship_size); 
+			ship.dest_x = in_limit(ship.dest_x - ship_speed, 0, SCREEN_WIDTH - ship.getSizeX()); 
+			accuracy = 64;
+		} else if (keys & KEY_RIGHT) {
+			ship.dest_x = in_limit(ship.dest_x + ship_speed, 0, SCREEN_WIDTH - ship.getSizeX());
 			accuracy = 64;
 		}
-		if (keys & KEY_RIGHT) {
-			ship.x = in_limit(ship.x + ship_speed, 0, SCREEN_WIDTH - ship_size);
-			accuracy = 64;
-		}
-		
+
 		accuracy--; if (accuracy < 0) accuracy = 0;
 		
 		if ((keys & KEY_L)) {
@@ -157,18 +161,10 @@ int main(int argc, char *argv[]) {
 					projectiles_idx);
 		}
 
-		oamRotateScale(
-			&oamMain,
-			1,
-			0,
-			-accuracy,
-			-accuracy
-		);
-
-
 		oamSet(&oamMain, //main graphics engine context
                         ship.idx_sprite,        //oam index (0 to 127)  
-                        ship.x, ship.y,   //x and y pixle location of the sprite
+                        ship.getScreenX(frame), 
+			ship.getScreenY(frame),   //x and y pixle location of the sprite
                         0,                    //priority, lower renders last (on top)
                         0,                    //this is the palette index if multiple palettes or the alpha value if bmp sprite     
                         ship.size,
@@ -181,7 +177,8 @@ int main(int argc, char *argv[]) {
 
 		oamSet(&oamMain, //main graphics engine context
                         crosshair.idx_sprite,        //oam index (0 to 127)  
-                        crosshair.x, crosshair.y,   //x and y pixle location of the sprite
+                        crosshair.getScreenX(frame), 
+			crosshair.getScreenY(frame),   //x and y pixle location of the sprite
                         0,                    //priority, lower renders last (on top)
                         0,                    //this is the palette index if multiple palettes or the alpha value if bmp sprite     
                         crosshair.size,
