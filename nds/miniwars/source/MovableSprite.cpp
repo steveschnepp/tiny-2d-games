@@ -3,21 +3,17 @@
 
 #include <nds.h>
 
-MovableSprite::MovableSprite() 
-	: is_shown(false)
+namespace {
+	bool is_init_done = false;
+	int idx_sprite = 0;
+};
+
+MovableSprite::MovableSprite(SpriteSize size) 
+	: is_shown(false), size(size)
 {
-	init_sprite();
-}
-
-bool is_init_done = false;
-int idx_sprite = 0;
-
-void MovableSprite::init_sprite() {
-	static int sprite_x = 8;
-	static int sprite_y = 8;
-
 	if (! is_init_done) {
 		oamInit(&oamMain, SpriteMapping_1D_32, false);
+
 		// Create the main palette
 		for (int color = 0; color < 256; color++) {
 			SPRITE_PALETTE[color] = (color << 7) | (1 << 15);
@@ -32,19 +28,11 @@ void MovableSprite::init_sprite() {
 	// Memory Allocation 
 	this->gfx = oamAllocateGfx(
 			&oamMain, 
-			SpriteSize_8x8,
+			size,
 			SpriteColorFormat_256Color
 		);
 
 	this->idx_sprite = ::idx_sprite++;
-
-	// Fill the sprite with indexes colors
-	for (int j = 0; j < sprite_y; j++) {
-		for (int i = 0; i < sprite_x/2; i++) {
-			int offset = j * sprite_x/2 + i;
-                	this->gfx[offset] = this->idx_sprite * 7;
-		}
-        }
 }
 
 void MovableSprite::setDestination(float x, float y, int current_frame, int dest_frame) {
@@ -69,3 +57,4 @@ int MovableSprite::getScreenY(int current_frame) {
 int MovableSprite::getFramesLeft(int current_frame) {
 	return dest_frame - current_frame;
 }
+

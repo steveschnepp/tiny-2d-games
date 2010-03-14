@@ -16,16 +16,14 @@ public:
 	bool is_shown;
 	u16* gfx;
 	int idx_sprite;
+	SpriteSize size;
 
-	MovableSprite();
+	MovableSprite(SpriteSize size);
 
 	void setDestination(float x, float y, int current_frame, int dest_frame);
 	int getScreenX(int current_frame);
 	int getScreenY(int current_frame);
 	int getFramesLeft(int current_frame);
-
-private: 
-	void init_sprite();
 };
 
 #endif // __MOVABLE_SPRITE_H__

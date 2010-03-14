@@ -12,6 +12,9 @@
 
 #include "nds_utils.h"
 #include "MovableSprite.h"
+#include "Projectile.h"
+#include "Crosshair.h"
+#include "Ship.h"
 
 void initVideo() {
        	videoSetMode(MODE_5_2D | DISPLAY_BG2_ACTIVE | DISPLAY_BG3_ACTIVE);
@@ -21,8 +24,6 @@ void initVideo() {
 }
 
 const int max_projectiles = 32;
-struct Projectile : public MovableSprite {
-};
 
 int get_next_free_projectile(Projectile projectiles[]) {
 	// Linear search 
@@ -66,9 +67,8 @@ int main(int argc, char *argv[]) {
 
 	Projectile projectiles[max_projectiles];
 
-	// Using Projectile for everything, since it's quite generic
-	Projectile crosshair;
-	Projectile ship;
+	Crosshair crosshair;
+	Ship ship;
 
 	ship.is_shown = true;
 	
@@ -96,7 +96,7 @@ int main(int argc, char *argv[]) {
 		}
 
 		// Movements of the ship
-		const int ship_size = 8;
+		const int ship_size = 64;
 		const int ship_speed = 4;
 		static int accuracy = 0;
 		if (keys & KEY_UP) {
@@ -124,7 +124,7 @@ int main(int argc, char *argv[]) {
 			if (projectiles_idx == -1) {
 				// No projectile left
 			} else {
-				Projectile& projectile = projectiles[projectiles_idx];
+				MovableSprite& projectile = projectiles[projectiles_idx];
 				projectile.is_shown = true;
 				projectile.x = ship.x;
 				projectile.y = ship.y;
@@ -171,7 +171,7 @@ int main(int argc, char *argv[]) {
                         ship.x, ship.y,   //x and y pixle location of the sprite
                         0,                    //priority, lower renders last (on top)
                         0,                    //this is the palette index if multiple palettes or the alpha value if bmp sprite     
-                        SpriteSize_8x8,
+                        ship.size,
                         SpriteColorFormat_256Color,
                         ship.gfx,                //pointer to the loaded graphics
                         -1,                  //sprite rotation data  
@@ -184,7 +184,7 @@ int main(int argc, char *argv[]) {
                         crosshair.x, crosshair.y,   //x and y pixle location of the sprite
                         0,                    //priority, lower renders last (on top)
                         0,                    //this is the palette index if multiple palettes or the alpha value if bmp sprite     
-                        SpriteSize_8x8,
+                        crosshair.size,
                         SpriteColorFormat_256Color,
                         crosshair.gfx, //pointer to the loaded graphics
                         1,                  //sprite rotation data  
@@ -193,7 +193,7 @@ int main(int argc, char *argv[]) {
 		);
 
 		for (int idx = 0; idx < max_projectiles; idx ++) {
-			Projectile& projectile = projectiles[idx];
+			MovableSprite& projectile = projectiles[idx];
 			if (! projectile.is_shown) {
 				continue;
 			}
@@ -211,7 +211,7 @@ int main(int argc, char *argv[]) {
 				projectile.getScreenY(frame),   //x and y pixle location of the sprite
 				idx,                    //priority, lower renders last (on top)
 				0,                    //this is the palette index if multiple palettes or the alpha value if bmp sprite     
-				SpriteSize_8x8,
+				projectile.size,
 				SpriteColorFormat_256Color,
 				projectile.gfx, //pointer to the loaded graphics
 				-1,                  //sprite rotation data  
