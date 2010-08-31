@@ -1,7 +1,8 @@
 // Copyright 2008-2009 Steve Schnepp <steve.schnepp@pwkf.org>
 #include "nds_utils.h"
 
-#include <nds.h>
+uint16* front = VRAM_A;
+uint16* back = VRAM_B;
 
 bool PA_LidClosed() {
 	return keysHeld() & KEY_LID; 

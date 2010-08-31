@@ -8,229 +8,190 @@
 #include <nds.h>
 #include <stdio.h>
 #include <stdlib.h>
+
 #include <cmath>
 
+#include <ext/slist>
+#include <list>
+#include <vector>
+
 #include "nds_utils.h"
+
 #include "MovableSprite.h"
-#include "Projectile.h"
-#include "Crosshair.h"
-#include "Ship.h"
+
+void flip_vram()
+{
+	if (front == VRAM_A) {
+		front = VRAM_B;
+		back = VRAM_A;
+		videoSetMode(MODE_FB1);			
+	} else {
+		front = VRAM_A;
+		back = VRAM_B;
+		videoSetMode(MODE_FB0);			
+	}
+}
 
 void initVideo() {
-       	videoSetMode(MODE_5_2D | DISPLAY_BG2_ACTIVE | DISPLAY_BG3_ACTIVE);
-	vramSetBankA(VRAM_A_MAIN_SPRITE);
+    /*
+     *  Map VRAM to display a background on the main and sub screens.
+     * 
+     *  The vramSetMainBanks function takes four arguments, one for each of the
+     *  major VRAM banks. We can use it as shorthand for assigning values to
+     *  each of the VRAM bank's control registers.
+     *
+     *  We map banks A and B to main screen background memory. This gives us
+     *  256KB, which is a healthy amount for 16-bit graphics.
+     *
+     *  We map bank C to sub screen background memory.
+     *
+     *  We map bank D to LCD. This setting is generally used for when we aren't
+     *  using a particular bank.
+     */
+    /*vramSetMainBanks(VRAM_A_MAIN_BG_0x06000000,
+                     VRAM_B_MAIN_BG_0x06020000,
+                     VRAM_C_SUB_BG_0x06200000,
+                     VRAM_D_LCD);
+	*/
+    vramSetMainBanks(VRAM_A_LCD, VRAM_B_LCD, VRAM_C_SUB_BG, VRAM_D_SUB_SPRITE);							
 
-	videoSetModeSub(MODE_0_2D | DISPLAY_BG0_ACTIVE);
+	//set main display to render directly from the frame buffer
+	videoSetMode(MODE_FB0);
+	
+    // /*  Set the video mode on the main screen. */
+    /* videoSetMode(MODE_5_2D | // Set the graphics mode to Mode 5
+                 DISPLAY_BG2_ACTIVE | // Enable BG2 for display
+                 DISPLAY_BG3_ACTIVE); //Enable BG3 for display
+*/
+    /*  Set the video mode on the sub screen. */
+    videoSetModeSub(MODE_5_2D | // Set the graphics mode to Mode 5
+                    DISPLAY_BG3_ACTIVE); // Enable BG3 for display
 }
 
-const int max_projectiles = 32;
+void initBackgrounds() {
+    /*  Set up affine background 3 on main as a 16-bit color background. */
+    REG_BG3CNT = BG_BMP16_256x256 |
+                 BG_BMP_BASE(0) | // The starting place in memory
+                 BG_PRIORITY(3); // A low priority
 
-int get_next_free_projectile(Projectile projectiles[]) {
-	// Linear search 
-	for (int idx = 0; idx < max_projectiles; idx ++) { 
-		if (! projectiles[idx].is_shown) return idx;
-	}
-	return -1;
+    /*  Set the affine transformation matrix for the main screen background 3
+     *  to be the identity matrix.
+     */
+    REG_BG3PA = 1 << 8;
+    REG_BG3PB = 0;
+    REG_BG3PC = 0;
+    REG_BG3PD = 1 << 8;
+
+    /*  Place main screen background 3 at the origin (upper left of the
+     *  screen).
+     */
+    REG_BG3X = 0;
+    REG_BG3Y = 0;
+
+    /*  Set up affine background 2 on main as a 16-bit color background. */
+    REG_BG2CNT = BG_BMP16_128x128 |
+                 BG_BMP_BASE(8) | // The starting place in memory
+                 BG_PRIORITY(2);  // A higher priority
+
+    /*  Set the affine transformation matrix for the main screen background 3
+     *  to be the identity matrix.
+     */
+    REG_BG2PA = 1 << 8;
+    REG_BG2PB = 0;
+    REG_BG2PC = 0;
+    REG_BG2PD = 1 << 8;
+
+    /*  Place main screen background 2 in an interesting place. */
+    REG_BG2X = -(SCREEN_WIDTH / 2 - 32) << 8;
+    REG_BG2Y = -32 << 8;
+
+    /*  Set up affine background 3 on the sub screen as a 16-bit color
+     *  background.
+     */
+    REG_BG3CNT_SUB = BG_BMP16_256x256 |
+                     BG_BMP_BASE(0) | // The starting place in memory
+                     BG_PRIORITY(3); // A low priority
+
+    /*  Set the affine transformation matrix for the sub screen background 3
+     *  to be the identity matrix.
+     */
+    REG_BG3PA_SUB = 1 << 8;
+    REG_BG3PB_SUB = 0;
+    REG_BG3PC_SUB = 0;
+    REG_BG3PD_SUB = 1 << 8;
+
+    /*
+     *  Place main screen background 3 at the origin (upper left of the screen)
+     */
+    REG_BG3X_SUB = 0;
+    REG_BG3Y_SUB = 0;
 }
 
-float in_limit(float value, float min, float max) {
-	if (value < min) value = min;
-	if (value > max) value = max;
-	return value;
-}
-
-float sign(float value) {
-	// return (value > 0) ? 1 : ( (value == 0) ? 0 : -1 );
-	if (value == 0) return 0;
-	if (value > 0) return 1;
-	return -1;
-}
-
-float sqr(float value) {
-	return value * value;
-}
-
-int debug = 0;
+typedef std::vector<MovableSprite*> particles_list;
+particles_list particles;
 
 // Function: main()
 int main(int argc, char *argv[]) {
 	/*  Turn on the 2D graphics core. */
 	powerOn(POWER_ALL_2D);
-
-	/*  Configure the VRAM and background control registers. */
+ 
+	 /*  Configure the VRAM and background control registers. */
 	lcdMainOnBottom(); // Place the main screen on the bottom physical screen
-	initVideo();
+	initVideo(); 
+	initBackgrounds(); 
 	
 	consoleDemoInit();
-	
-	//by default font will be rendered with color 255
-	BG_PALETTE_SUB[255] = RGB15(31,31,31);	
-
-	Projectile projectiles[max_projectiles];
-
-	Crosshair crosshair;
-	Ship ship;
-
-	ship.is_shown = true;
-	ship.frame = 0;
-	ship.dest_frame = 0;
+	// BG_PALETTE_SUB[255] = RGB15(31,31,31);	//by default font will be rendered with color 255
 	
 	// Infinite loop to keep the program running
-	for (unsigned int frame = 0; true; frame++) {
+	while (1) {
+		static volatile int frame = 0;
+		frame++;
+		
 		static touchPosition touch;
-
-		static int last_frame_shoot = frame;
-
+		touchRead(&touch);
+		
 		scanKeys();
 		PA_CheckLid();
+
+
+		// checkReset(held);
 
 		// --------
 		// Do stuff
 		// --------
-		int keys = keysHeld();
-                if (keys & KEY_TOUCH) {
-			touchRead(&touch);
-			crosshair.setDestination(
-				touch.px,
-				touch.py,
-				frame, frame
-			);
-			crosshair.is_shown = true;
-		} else {
-			crosshair.is_shown = false;
-			crosshair.is_shown = true;
+		int held = keysHeld();
+		if (held & KEY_UP) {
+		} else if (held & KEY_DOWN) {
 		}
-
-		// Movements of the ship
-		const int ship_speed = 4;
-		static int accuracy = 0;
-			
-		if (keys & KEY_UP) {
-			ship.dest_y = in_limit(ship.dest_y - ship_speed, 0, SCREEN_HEIGHT - ship.getSizeY()); 
-			accuracy = 64;
-		} else if (keys & KEY_DOWN) {
-			ship.dest_y = in_limit(ship.dest_y + ship_speed, 0, SCREEN_HEIGHT - ship.getSizeY()); 
-			accuracy = 64;
-		}
-
-		if (keys & KEY_LEFT) {
-			ship.dest_x = in_limit(ship.dest_x - ship_speed, 0, SCREEN_WIDTH - ship.getSizeX()); 
-			accuracy = 64;
-		} else if (keys & KEY_RIGHT) {
-			ship.dest_x = in_limit(ship.dest_x + ship_speed, 0, SCREEN_WIDTH - ship.getSizeX());
-			accuracy = 64;
-		}
-
-		if (accuracy > 0) accuracy--;
 		
-		if ((keys & KEY_L)) {
-			// Shoot
-			int projectiles_idx = get_next_free_projectile(projectiles);
-			if (projectiles_idx == -1) {
-				// No projectile left
-			} else {
-				MovableSprite& projectile = projectiles[projectiles_idx];
-				projectile.is_shown = true;
-				projectile.x = ship.dest_x;
-				projectile.y = ship.dest_x;
-				projectile.dest_x = crosshair.dest_x;
-				projectile.dest_y = crosshair.dest_y;
-
-				// Adding some randomness
-				if (accuracy > 0) {
-					float rnd_x = rand() % accuracy - (accuracy / 2);
-					float rnd_y = rand() % accuracy - (accuracy / 2);
-					
-					projectile.dest_x += rnd_x;
-					projectile.dest_y += rnd_y;
-				}
-				
-				projectile.frame = frame;
-
-				float distance = sqrt(
-					sqr(projectile.dest_x - projectile.x)
-					+ sqr(projectile.dest_y - projectile.y)
-				);
-
-				projectile.dest_frame = frame + distance / 4;
-
-				last_frame_shoot = frame;
-			}
-			if(debug) printf("[%d]SHT[%d,%d][%d,%d][%d]\n", frame, 
-					int(ship.x), int(ship.y), 
-					touch.px, touch.py, 
-					projectiles_idx);
+		if (held & KEY_RIGHT) {
+		} else if (held & KEY_LEFT) {
+		}
+		
+		if (held & KEY_A) {
+		} else if (held & KEY_B) {
 		}
 
-		oamSet(&oamMain, //main graphics engine context
-                        ship.idx_sprite,        //oam index (0 to 127)  
-                        ship.getScreenX(frame), 
-			ship.getScreenY(frame),   //x and y pixle location of the sprite
-                        0,                    //priority, lower renders last (on top)
-                        0,                    //this is the palette index if multiple palettes or the alpha value if bmp sprite     
-                        ship.size,
-                        SpriteColorFormat_256Color,
-                        ship.gfx,                //pointer to the loaded graphics
-                        -1,                  //sprite rotation data  
-                        false,               //double the size when rotating?
-                        !ship.is_shown                //hide the sprite?
-		);
-
-		oamSet(&oamMain, //main graphics engine context
-			// oam index (0 to 127)  
-                        crosshair.idx_sprite,        
-			// x and y pixel location of the sprite
-                        crosshair.getScreenX(frame), 
-			crosshair.getScreenY(frame),   
-			// priority, lower renders last (on top)
-                        0,                    
-			// this is the palette index if multiple palettes 
-			// or the alpha value if bmp sprite     
-                        0,                    
-                        crosshair.size,
-                        SpriteColorFormat_256Color,
-                        crosshair.gfx, //pointer to the loaded graphics
-                        1,                  //sprite rotation data  
-                        false,               //double the size when rotating?
-                        !crosshair.is_shown  //hide the sprite?
-		);
-
-		for (int idx = 0; idx < max_projectiles; idx ++) {
-			MovableSprite& projectile = projectiles[idx];
-			if (! projectile.is_shown) {
-				continue;
-			}
-
-			int frames_left = projectile.getFramesLeft(frame);
-			if(debug > 1) printf("[%d][%d] frames left [%d]\n", frame, idx, frames_left);
-			if (frames_left <= 0) {
-				// hide the sprite
-				projectile.is_shown = false;
-			}
-
-			oamSet(&oamMain, //main graphics engine context
-				projectile.idx_sprite,        //oam index (0 to 127)  
-				projectile.getScreenX(frame), 
-				projectile.getScreenY(frame),   //x and y pixle location of the sprite
-				idx,                    //priority, lower renders last (on top)
-				0,                    //this is the palette index if multiple palettes or the alpha value if bmp sprite     
-				projectile.size,
-				SpriteColorFormat_256Color,
-				projectile.gfx, //pointer to the loaded graphics
-				-1,                  //sprite rotation data  
-				false,               //double the size when rotating?
-				! projectile.is_shown  //hide the sprite?
-			);
+		if (held & KEY_TOUCH) {
 		}
 
+		// Draws every Particle on the back screen
+		for(particles_list::iterator i = particles.begin(); i != particles.end(); ++i) {
+			MovableSprite* particle = *i;
+			particle->draw();
+		}
+
+		// flip screens
+		flip_vram();
+
+		// erase back screen
+		uint16 col = RGB15(0, 0, 0) | BIT(15);
+		uint32 colcol = col | col << 16;
+		swiFastCopy(&colcol, back, 192*256*2/4 | COPY_MODE_FILL);
+		
+		PA_CheckLid();
 		swiWaitForVBlank();
-
-		if (checkReset()) if(debug) printf("[%d] checkReset\n", frame);
-		if (keysDown() & KEY_SELECT) { 
-			debug = (debug + 1) % 3; 
-			printf("[%d] DEBUG %d\n", frame, debug);
-	       	}
-		oamUpdate(&oamMain);
 	}
 	
 	return 0;

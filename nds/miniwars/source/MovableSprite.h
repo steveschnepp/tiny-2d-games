@@ -6,7 +6,7 @@
 
 class MovableSprite {
 
-public:
+protected:
 	int frame;
 	float x, y;
 	
@@ -17,6 +17,7 @@ public:
 	u16* gfx;
 	int idx_sprite;
 	SpriteSize size;
+public:
 
 	int getSizeX() const;
 	int getSizeY() const;
@@ -27,6 +28,8 @@ public:
 	int getScreenX(int current_frame) const;
 	int getScreenY(int current_frame) const;
 	int getFramesLeft(int current_frame) const;
+
+	int draw();
 };
 
 #endif // __MOVABLE_SPRITE_H__

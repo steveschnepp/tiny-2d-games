@@ -24,14 +24,18 @@ INCLUDES	:=	include build
 #---------------------------------------------------------------------------------
 # options for code generation
 #---------------------------------------------------------------------------------
-ARCH	:=	-mthumb -mthumb-interwork
+ARCH	:=	\
+		-mthumb-interwork \
+		#
+		#-mthumb \
 
 # note: arm9tdmi isn't the correct CPU arch, but anything newer and LD
 # *insists* it has a FPU or VFP, and it won't take no for an answer!
-CFLAGS	:=	-g -Wall -O2\
- 			-mcpu=arm9tdmi -mtune=arm9tdmi -fomit-frame-pointer\
+CFLAGS	:=	-g -Wall -Os\
+ 			-mcpu=arm9tdmi -mtune=arm9tdmi \
 			-ffast-math \
 			$(ARCH)
+			#-fomit-frame-pointer\
 
 CFLAGS	+=	$(INCLUDE) -DARM9
 CXXFLAGS	:= $(CFLAGS) -fno-rtti -fno-exceptions
