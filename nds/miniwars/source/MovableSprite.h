@@ -17,6 +17,9 @@ protected:
 	u16* gfx;
 	int idx_sprite;
 	SpriteSize size;
+
+	int getFramesLeft(int current_frame) const;
+
 public:
 
 	int getSizeX() const;
@@ -25,11 +28,14 @@ public:
 	MovableSprite(SpriteSize size);
 
 	void setDestination(float x, float y, int current_frame, int dest_frame);
+	
+	void moveTo(float dx, float dy, int current_frame, float speed);
 	int getScreenX(int current_frame) const;
 	int getScreenY(int current_frame) const;
-	int getFramesLeft(int current_frame) const;
 
-	int draw();
+	bool draw(int current_frame) const;
+
+	bool setShown(bool is_shown);
 };
 
 #endif // __MOVABLE_SPRITE_H__

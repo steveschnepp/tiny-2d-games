@@ -9,7 +9,6 @@ public:
 	Ship();
 
 private:
-	void fillSprite();
 };
 
 #endif // __SHIP_H__

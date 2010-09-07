@@ -18,6 +18,8 @@
 #include "nds_utils.h"
 
 #include "MovableSprite.h"
+#include "Ship.h"
+#include "Crosshair.h"
 
 void flip_vram()
 {
@@ -127,8 +129,22 @@ void initBackgrounds() {
     REG_BG3Y_SUB = 0;
 }
 
-typedef std::vector<MovableSprite*> particles_list;
-particles_list particles;
+typedef std::vector<MovableSprite*> sprite_list;
+sprite_list sprites;
+
+void draw_all_sprites(int frame) {
+	// Draws every Particle on the back screen
+	for(sprite_list::iterator i = sprites.begin(); i != sprites.end(); ++i) {
+		MovableSprite* s = *i;
+		s->draw(frame);
+	}
+}
+
+void erase_screen(uint16* screen) {
+	const uint16 col = RGB15(0, 0, 0) | BIT(15);
+	const uint32 colcol = col | col << 16;
+	swiFastCopy(&colcol, screen, 192*256*2/4 | COPY_MODE_FILL);
+}
 
 // Function: main()
 int main(int argc, char *argv[]) {
@@ -136,12 +152,25 @@ int main(int argc, char *argv[]) {
 	powerOn(POWER_ALL_2D);
  
 	 /*  Configure the VRAM and background control registers. */
-	lcdMainOnBottom(); // Place the main screen on the bottom physical screen
+
+	// Place the main screen on the bottom physical screen
+	lcdMainOnBottom(); 
 	initVideo(); 
 	initBackgrounds(); 
 	
 	consoleDemoInit();
-	// BG_PALETTE_SUB[255] = RGB15(31,31,31);	//by default font will be rendered with color 255
+	// by default font will be rendered with color 255
+	// BG_PALETTE_SUB[255] = RGB15(31,31,31);	
+	//
+	Ship ship = Ship();
+	sprites.push_back(& ship);
+
+	ship.setDestination(0, 0, 0, 0);
+	ship.setShown(true);
+
+	Crosshair crosshair = Crosshair();
+	sprites.push_back(& crosshair);
+
 	
 	// Infinite loop to keep the program running
 	while (1) {
@@ -154,7 +183,6 @@ int main(int argc, char *argv[]) {
 		scanKeys();
 		PA_CheckLid();
 
-
 		// checkReset(held);
 
 		// --------
@@ -162,11 +190,15 @@ int main(int argc, char *argv[]) {
 		// --------
 		int held = keysHeld();
 		if (held & KEY_UP) {
+			ship.moveTo(-10, 0, frame, 1);
 		} else if (held & KEY_DOWN) {
+			ship.moveTo(10, 0, frame, 1);
 		}
 		
 		if (held & KEY_RIGHT) {
+			ship.moveTo(0, 10, frame, 1);
 		} else if (held & KEY_LEFT) {
+			ship.moveTo(0, -10, frame, 1);
 		}
 		
 		if (held & KEY_A) {
@@ -174,21 +206,21 @@ int main(int argc, char *argv[]) {
 		}
 
 		if (held & KEY_TOUCH) {
+			bool was_shown = crosshair.setShown(true);
+			if (! was_shown) {
+				crosshair.setDestination(touch.px, touch.py, frame, frame + 100);
+			}
+		} else {
+			crosshair.setShown(false);
 		}
 
-		// Draws every Particle on the back screen
-		for(particles_list::iterator i = particles.begin(); i != particles.end(); ++i) {
-			MovableSprite* particle = *i;
-			particle->draw();
-		}
+		draw_all_sprites(frame);
 
 		// flip screens
 		flip_vram();
 
 		// erase back screen
-		uint16 col = RGB15(0, 0, 0) | BIT(15);
-		uint32 colcol = col | col << 16;
-		swiFastCopy(&colcol, back, 192*256*2/4 | COPY_MODE_FILL);
+		erase_screen(back);
 		
 		PA_CheckLid();
 		swiWaitForVBlank();

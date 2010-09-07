@@ -2,37 +2,29 @@
 #include "MovableSprite.h"
 
 #include <nds.h>
+#include <cmath>
+
+#include "nds_utils.h"
 
 namespace {
-	bool is_init_done = false;
-	int idx_sprite = 0;
+	volatile int global_idx_sprite = 0;
+
+	float sqr(float a) {
+		return a * a;
+	}
+
+	void Put8bitPixel(int scr_x, int scr_y, 
+			unsigned short int color) {
+		back[scr_x + scr_y * SCREEN_WIDTH] = color;
+	}
+
 };
 
 MovableSprite::MovableSprite(SpriteSize size) 
 	: is_shown(false), size(size)
 {
-	if (! is_init_done) {
-		oamInit(&oamMain, SpriteMapping_1D_32, false);
-
-		// Create the main palette
-		for (int color = 0; color < 256; color++) {
-			SPRITE_PALETTE[color] = (color << 7) | (1 << 15);
-		};
-			
-		SPRITE_PALETTE[1] = RGB15(31, 0, 0);
-		SPRITE_PALETTE[2] = RGB15(0, 31, 0);
-		SPRITE_PALETTE[3] = RGB15(0, 0, 31);
-		SPRITE_PALETTE[4] = RGB15(0, 0,  5);
-	}
-
 	// Memory Allocation 
-	this->gfx = oamAllocateGfx(
-			&oamMain, 
-			size,
-			SpriteColorFormat_256Color
-		);
-
-	this->idx_sprite = ::idx_sprite++;
+	this->idx_sprite = ::global_idx_sprite++;
 }
 
 void MovableSprite::setDestination(float x, float y, int current_frame, int dest_frame) {
@@ -85,4 +77,27 @@ int MovableSprite::getSizeY() const {
 		default:
 			return 0;
 	}
+}
+
+bool MovableSprite::setShown(bool is_shown) {
+	bool old_value = this->is_shown;
+	this->is_shown = is_shown;
+	return old_value;
+}
+
+bool MovableSprite::draw(int current_frame) const {
+	if (! this->is_shown) return false;
+	
+	Put8bitPixel(getScreenX(current_frame), getScreenY(current_frame), RGB15(0,0,31));
+	return true;
+}
+
+void MovableSprite::moveTo(float dx, float dy, int current_frame, float speed) {
+	float distance = sqrt(sqr(dx) + sqr(dy));
+	int nb_frame_needed = int(distance / speed);
+
+	this->setDestination(
+			this->x + dx, this->y + dy, 
+			current_frame, nb_frame_needed
+		);
 }
