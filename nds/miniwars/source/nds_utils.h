@@ -1,4 +1,4 @@
-// Copyright 2008-2009 Steve Schnepp <steve.schnepp@pwkf.org>
+// (c) LGPL 2008-2010 Steve Schnepp <steve.schnepp@pwkf.org>
 #ifndef __NDS_UTILS_H__
 #define __NDS_UTILS_H__
 

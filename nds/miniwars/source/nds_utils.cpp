@@ -1,4 +1,4 @@
-// Copyright 2008-2009 Steve Schnepp <steve.schnepp@pwkf.org>
+// (c) LGPL 2008-2010 Steve Schnepp <steve.schnepp@pwkf.org>
 #include "nds_utils.h"
 
 uint16* front = VRAM_A;

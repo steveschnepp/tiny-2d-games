@@ -1,4 +1,4 @@
-// Copyright 2008-2010 Steve Schnepp <steve.schnepp@pwkf.org>
+// (c) LGPL 2008-2010 Steve Schnepp <steve.schnepp@pwkf.org>
 #ifndef __CROSSHAIR_H__
 #define __CROSSHAIR_H__
 

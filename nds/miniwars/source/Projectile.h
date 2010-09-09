@@ -1,4 +1,4 @@
-// Copyright 2008-2010 Steve Schnepp <steve.schnepp@pwkf.org>
+// (c) LGPL 2008-2010 Steve Schnepp <steve.schnepp@pwkf.org>
 #ifndef __PROJECTILE_H__
 #define __PROJECTILE_H__
 
