@@ -165,10 +165,11 @@ int main(int argc, char *argv[]) {
 	Ship ship = Ship();
 	sprites.push_back(& ship);
 
-	ship.setDestination(0, 0, 0, 0);
+	ship.setDestination(64, 64, 0, 0);
 	ship.setShown(true);
 
 	Crosshair crosshair = Crosshair();
+	crosshair.setDestination(64, 64, 0, 0);
 	sprites.push_back(& crosshair);
 
 	
@@ -190,15 +191,15 @@ int main(int argc, char *argv[]) {
 		// --------
 		int held = keysHeld();
 		if (held & KEY_UP) {
-			ship.moveTo(-10, 0, frame, 1);
+			ship.moveTo(0, -10, frame, 1);
 		} else if (held & KEY_DOWN) {
-			ship.moveTo(10, 0, frame, 1);
+			ship.moveTo(0, 10, frame, 1);
 		}
 		
 		if (held & KEY_RIGHT) {
-			ship.moveTo(0, 10, frame, 1);
+			ship.moveTo(10, 0, frame, 1);
 		} else if (held & KEY_LEFT) {
-			ship.moveTo(0, -10, frame, 1);
+			ship.moveTo(-10, 0, frame, 1);
 		}
 		
 		if (held & KEY_A) {
@@ -206,10 +207,17 @@ int main(int argc, char *argv[]) {
 		}
 
 		if (held & KEY_TOUCH) {
-			bool was_shown = crosshair.setShown(true);
-			if (! was_shown) {
-				crosshair.setDestination(touch.px, touch.py, frame, frame + 100);
+			static int last_touch_x;
+			static int last_touch_y;
+			if (last_touch_x != touch.px || last_touch_y != touch.py) {
+				crosshair.moveTo(touch.px - crosshair.getScreenX(frame), 
+					touch.py - crosshair.getScreenY(frame), 
+					frame, 30
+				);
+				last_touch_x = touch.px;
+				last_touch_y = touch.py;
 			}
+			crosshair.setShown(true);
 		} else {
 			crosshair.setShown(false);
 		}

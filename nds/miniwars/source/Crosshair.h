@@ -8,8 +8,11 @@ class Crosshair : public MovableSprite {
 public:
 	Crosshair();
 
+	virtual int getSizeX(int current_frame) const;
+	virtual int getSizeY(int current_frame) const;
+	
 private:
-	void fillSprite();
+	int getSize(int current_frame) const;
 };
 
 #endif // __CROSSHAIR_H__
