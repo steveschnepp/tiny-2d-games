@@ -10,6 +10,7 @@
 #include <stdlib.h>
 
 #include <cmath>
+#include <cstring>
 
 #include <ext/slist>
 #include <list>
@@ -140,14 +141,36 @@ void draw_all_sprites(int frame) {
 	}
 }
 
+void erase_screen_memset(uint16* screen) {
+	// Fill the whole screen buffer with 0
+	memset(screen, 0, 192*256*2);
+}
+
 void erase_screen(uint16* screen) {
 	const uint16 col = RGB15(0, 0, 0) | BIT(15);
 	const uint32 colcol = col | col << 16;
 	swiFastCopy(&colcol, screen, 192*256*2/4 | COPY_MODE_FILL);
 }
 
+
+/* Handle the ms counter, will be called at 1kHz */
+volatile unsigned int current_ms = 0;
+void timing_handler() {
+	++current_ms;
+}
+
 // Function: main()
 int main(int argc, char *argv[]) {
+	// Set divisor and IRQ req for timer number 2
+	TIMER_CR(1) = TIMER_ENABLE | TIMER_IRQ_REQ | TIMER_DIV_1024;
+	TIMER_DATA(1) = TIMER_FREQ_1024(1000); // 1kHz frequency
+	irqSet(IRQ_TIMER1, timing_handler);
+	irqEnable(IRQ_TIMER1);
+
+	/* Enabling interrupts */
+	// REG_IME=1;
+
+
 	/*  Turn on the 2D graphics core. */
 	powerOn(POWER_ALL_2D);
  
@@ -157,11 +180,9 @@ int main(int argc, char *argv[]) {
 	lcdMainOnBottom(); 
 	initVideo(); 
 	initBackgrounds(); 
-	
+
 	consoleDemoInit();
-	// by default font will be rendered with color 255
-	// BG_PALETTE_SUB[255] = RGB15(31,31,31);	
-	//
+
 	Ship ship = Ship();
 	sprites.push_back(& ship);
 
@@ -212,7 +233,7 @@ int main(int argc, char *argv[]) {
 			if (last_touch_x != touch.px || last_touch_y != touch.py) {
 				crosshair.moveTo(touch.px - crosshair.getScreenX(frame), 
 					touch.py - crosshair.getScreenY(frame), 
-					frame, 30
+					frame, 10
 				);
 				last_touch_x = touch.px;
 				last_touch_y = touch.py;
@@ -221,17 +242,28 @@ int main(int argc, char *argv[]) {
 		} else {
 			crosshair.setShown(false);
 		}
-
+		
+		int start_draw_sprite = current_ms;
 		draw_all_sprites(frame);
+		int stop_draw_sprite = current_ms;
 
 		// flip screens
 		flip_vram();
 
 		// erase back screen
+		int start_erase = current_ms;
 		erase_screen(back);
+		int stop_erase = current_ms;
 		
+		// Clear console & Write debugging infos
+		printf("\x1b[2J");
+		printf("drawing sprites : %dms\n", stop_draw_sprite - start_draw_sprite);
+		printf("erase sprites : %dms\n", stop_erase - start_erase);
+
 		PA_CheckLid();
+		
 		swiWaitForVBlank();
+
 	}
 	
 	return 0;
