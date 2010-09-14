@@ -49,7 +49,7 @@ namespace {
 };
 
 MovableSprite::MovableSprite(SpriteSize size) 
-	: is_shown(false)
+	: is_shown(false), color(RGB15(15, 15, 15))
 {
 	// Memory Allocation 
 	this->idx_sprite = ::global_idx_sprite++;
@@ -106,6 +106,11 @@ int MovableSprite::getFramesLeft(int current_frame) const {
 }
 
 
+bool MovableSprite::isExpired(int current_frame) const {
+	// By default, sprites never expire
+	return false;
+}
+
 bool MovableSprite::setShown(bool is_shown) {
 	bool old_value = this->is_shown;
 	this->is_shown = is_shown;
@@ -121,7 +126,7 @@ bool MovableSprite::draw(int current_frame) const {
 	int current_size_y = getSizeY(current_frame);
 	for (int ix = - current_size_x/2; ix < current_size_x/2; ix++) {
 		for (int iy = - current_size_y/2; iy < current_size_y/2; iy++) {
-			Put8bitPixel(src_x + ix, src_y + iy, COLOR_BLUE);
+			Put8bitPixel(src_x + ix, src_y + iy, this->color);
 		}
 	}
 	return true;

@@ -21,6 +21,7 @@
 #include "MovableSprite.h"
 #include "Ship.h"
 #include "Crosshair.h"
+#include "Particle.h"
 
 void flip_vram()
 {
@@ -134,10 +135,15 @@ typedef std::vector<MovableSprite*> sprite_list;
 sprite_list sprites;
 
 void draw_all_sprites(int frame) {
-	// Draws every Particle on the back screen
+	// Draws every Sprite on the back screen
 	for(sprite_list::iterator i = sprites.begin(); i != sprites.end(); ++i) {
 		MovableSprite* s = *i;
 		s->draw(frame);
+		if(false && s->isExpired(frame)) {
+			// Remove the sprite
+			printf("REMOVING SPRITE\n");
+			i = sprites.erase(i);
+		}
 	}
 }
 
@@ -239,9 +245,24 @@ int main(int argc, char *argv[]) {
 				last_touch_y = touch.py;
 			}
 			crosshair.setShown(true);
+
+			if (held & KEY_L) {
+				// Shooting to the crosshair
+				MovableSprite* projectile = new Particle(ship, frame);
+				
+				float crosshair_x = crosshair.getScreenX(frame);
+					//+ (1 - 0.5 * rand()) * crosshair.getSizeX(frame);
+				float crosshair_y = crosshair.getScreenY(frame);
+					//+ (1 - 0.5 * rand()) * crosshair.getSizeY(frame);
+				projectile->setDestination(crosshair_x, crosshair_y, frame, frame + 150);
+
+				sprites.push_back(projectile);
+			}
+
 		} else {
 			crosshair.setShown(false);
 		}
+		
 		
 		int start_draw_sprite = current_ms;
 		draw_all_sprites(frame);
@@ -257,8 +278,11 @@ int main(int argc, char *argv[]) {
 		
 		// Clear console & Write debugging infos
 		printf("\x1b[2J");
-		printf("drawing sprites : %dms\n", stop_draw_sprite - start_draw_sprite);
-		printf("erase sprites : %dms\n", stop_erase - start_erase);
+		printf("nb: %d\n", sprites.size());
+		printf("draw: %dms, erase: %d\n", 
+				stop_draw_sprite - start_draw_sprite,
+	       			stop_erase - start_erase
+				);
 
 		PA_CheckLid();
 		

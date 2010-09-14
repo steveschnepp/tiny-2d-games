@@ -18,6 +18,7 @@ protected:
 	int idx_sprite;
 	int sizeX;
 	int sizeY;
+	unsigned short int color;
 	
 	int getFramesLeft(int current_frame) const;
 
@@ -37,6 +38,7 @@ public:
 	bool draw(int current_frame) const;
 
 	bool setShown(bool is_shown);
+	virtual bool isExpired(int current_frame) const;
 };
 
 #endif // __MOVABLE_SPRITE_H__
