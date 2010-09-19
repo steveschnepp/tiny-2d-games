@@ -8,11 +8,11 @@ class Crosshair : public MovableSprite {
 public:
 	Crosshair();
 
-	virtual int getSizeX(int current_frame) const;
-	virtual int getSizeY(int current_frame) const;
+	virtual int getSizeX() const;
+	virtual int getSizeY() const;
 	
 private:
-	int getSize(int current_frame) const;
+	int getSize() const;
 };
 
 #endif // __CROSSHAIR_H__

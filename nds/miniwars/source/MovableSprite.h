@@ -7,10 +7,10 @@
 class MovableSprite {
 
 protected:
-	int frame;
+	unsigned int frame;
 	float x, y;
 	
-	int dest_frame;
+	unsigned int dest_frame;
 	float dest_x, dest_y;
 
 	bool is_shown;
@@ -20,25 +20,25 @@ protected:
 	int sizeY;
 	unsigned short int color;
 	
-	int getFramesLeft(int current_frame) const;
+	int getFramesLeft() const;
 
 public:
 
-	virtual int getSizeX(int current_frame) const;
-	virtual int getSizeY(int current_frame) const;
+	virtual int getSizeX() const;
+	virtual int getSizeY() const;
 
 	MovableSprite(SpriteSize size);
 
-	void setDestination(float x, float y, int current_frame, int dest_frame);
+	void setDestination(float x, float y, unsigned int dest_frame);
 	
-	void moveTo(float dx, float dy, int current_frame, float speed);
-	float getScreenX(int current_frame) const;
-	float getScreenY(int current_frame) const;
+	void moveTo(float dx, float dy, float speed);
+	float getScreenX() const;
+	float getScreenY() const;
 
-	bool draw(int current_frame) const;
+	bool draw() const;
 
 	bool setShown(bool is_shown);
-	virtual bool isExpired(int current_frame) const;
+	virtual bool isExpired() const;
 };
 
 #endif // __MOVABLE_SPRITE_H__

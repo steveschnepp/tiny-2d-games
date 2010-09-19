@@ -2,14 +2,11 @@
 #ifndef __PROJECTILE_H__
 #define __PROJECTILE_H__
 
-#include "MovableSprite.h"
+#include "Particle.h"
 
-class Projectile : public MovableSprite {
+class Projectile : public Particle {
 public:
-	Projectile();
-
-private:
-	void fillSprite();
+	Projectile(const MovableSprite& emitter, const MovableSprite& target);
 };
 
 #endif // __PROJECTILE_H__

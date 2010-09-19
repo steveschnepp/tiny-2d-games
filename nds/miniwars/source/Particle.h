@@ -8,9 +8,9 @@
 
 class Particle : public MovableSprite {
 public:
-	Particle(const MovableSprite& emitter, int current_frame);
+	Particle(const MovableSprite& emitter);
 
-	virtual bool isExpired(int current_frame) const;
+	virtual bool isExpired() const;
 };
 
 #endif // __PARTICLE_H__

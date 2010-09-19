@@ -5,6 +5,7 @@
 #include <cmath>
 
 #include "nds_utils.h"
+#include "game_world.h"
 
 namespace {
 	volatile int global_idx_sprite = 0;
@@ -35,7 +36,6 @@ namespace {
 		}
 	}
 
-	unsigned short int COLOR_BLUE = RGB15(0,0,31);
 	void Put8bitPixel(int scr_x, int scr_y, 
 			unsigned short int color) {
 		// Don't put pixel outside screen
@@ -57,11 +57,11 @@ MovableSprite::MovableSprite(SpriteSize size)
 	this->sizeY = getSpriteSizeY(size);
 }
 
-void MovableSprite::setDestination(float x, float y, int current_frame, int dest_frame) {
+void MovableSprite::setDestination(float x, float y, unsigned int dest_frame) {
 	// Sets the starting pos to the current pos
 	if (dest_frame > current_frame) {
-		this->x = this->getScreenX(current_frame);
-		this->y = this->getScreenY(current_frame);
+		this->x = this->getScreenX();
+		this->y = this->getScreenY();
 	} else {
 		// already there
 		this->x = x;
@@ -75,38 +75,38 @@ void MovableSprite::setDestination(float x, float y, int current_frame, int dest
 
 }
 
-float MovableSprite::getScreenX(int current_frame) const {
+float MovableSprite::getScreenX() const {
 	int nb_frames_to_target = dest_frame - frame;
-	if (getFramesLeft(current_frame) <= 0) {
+	if (getFramesLeft() <= 0) {
 		return dest_x;
 	}
 
-	return dest_x - (dest_x - x) * getFramesLeft(current_frame) / nb_frames_to_target;
+	return dest_x - (dest_x - x) * getFramesLeft() / nb_frames_to_target;
 }
 
-float MovableSprite::getScreenY(int current_frame) const {
+float MovableSprite::getScreenY() const {
 	int nb_frames_to_target = dest_frame - frame;
-	if (getFramesLeft(current_frame) <= 0) {
+	if (getFramesLeft() <= 0) {
 		return dest_y;
 	}
 
-	return dest_y - (dest_y - y) * getFramesLeft(current_frame) / nb_frames_to_target;
+	return dest_y - (dest_y - y) * getFramesLeft() / nb_frames_to_target;
 }
 	
-int MovableSprite::getSizeX(int current_frame) const {
+int MovableSprite::getSizeX() const {
 	return sizeX;
 }
 
-int MovableSprite::getSizeY(int current_frame) const {
+int MovableSprite::getSizeY() const {
 	return sizeY;
 }
 
-int MovableSprite::getFramesLeft(int current_frame) const {
+int MovableSprite::getFramesLeft() const {
 	return dest_frame - current_frame;
 }
 
 
-bool MovableSprite::isExpired(int current_frame) const {
+bool MovableSprite::isExpired() const {
 	// By default, sprites never expire
 	return false;
 }
@@ -117,13 +117,13 @@ bool MovableSprite::setShown(bool is_shown) {
 	return old_value;
 }
 
-bool MovableSprite::draw(int current_frame) const {
+bool MovableSprite::draw() const {
 	if (! this->is_shown) return false;
 	
-	int src_x = getScreenX(current_frame);
-	int src_y = getScreenY(current_frame);
-	int current_size_x = getSizeX(current_frame);
-	int current_size_y = getSizeY(current_frame);
+	int src_x = getScreenX();
+	int src_y = getScreenY();
+	int current_size_x = getSizeX();
+	int current_size_y = getSizeY();
 	for (int ix = - current_size_x/2; ix < current_size_x/2; ix++) {
 		for (int iy = - current_size_y/2; iy < current_size_y/2; iy++) {
 			Put8bitPixel(src_x + ix, src_y + iy, this->color);
@@ -132,14 +132,14 @@ bool MovableSprite::draw(int current_frame) const {
 	return true;
 }
 
-void MovableSprite::moveTo(float dx, float dy, int current_frame, float speed) {
+void MovableSprite::moveTo(float dx, float dy, float speed) {
 	float distance = sqrt(sqr(dx) + sqr(dy));
 	int nb_frame_needed = distance / speed;
 
-	this->x = getScreenX(current_frame);
-	this->y = getScreenY(current_frame);
+	this->x = getScreenX();
+	this->y = getScreenY();
 	this->setDestination(
 			this->x + dx, this->y + dy, 
-			current_frame, current_frame + nb_frame_needed
+			current_frame + nb_frame_needed
 		);
 }

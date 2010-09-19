@@ -17,11 +17,13 @@
 #include <vector>
 
 #include "nds_utils.h"
+#include "game_world.h"
 
 #include "MovableSprite.h"
 #include "Ship.h"
 #include "Crosshair.h"
 #include "Particle.h"
+#include "Projectile.h"
 
 void flip_vram()
 {
@@ -131,15 +133,15 @@ void initBackgrounds() {
     REG_BG3Y_SUB = 0;
 }
 
-typedef std::vector<MovableSprite*> sprite_list;
+typedef std::list<MovableSprite*> sprite_list;
 sprite_list sprites;
 
-void draw_all_sprites(int frame) {
+void draw_all_sprites() {
 	// Draws every Sprite on the back screen
 	for(sprite_list::iterator i = sprites.begin(); i != sprites.end(); ++i) {
 		MovableSprite* s = *i;
-		s->draw(frame);
-		if(false && s->isExpired(frame)) {
+		s->draw();
+		if(s->isExpired()) {
 			// Remove the sprite
 			printf("REMOVING SPRITE\n");
 			i = sprites.erase(i);
@@ -158,29 +160,15 @@ void erase_screen(uint16* screen) {
 	swiFastCopy(&colcol, screen, 192*256*2/4 | COPY_MODE_FILL);
 }
 
-
-/* Handle the ms counter, will be called at 1kHz */
-volatile unsigned int current_ms = 0;
-void timing_handler() {
-	++current_ms;
-}
-
 // Function: main()
 int main(int argc, char *argv[]) {
-	// Set divisor and IRQ req for timer number 2
-	TIMER_CR(1) = TIMER_ENABLE | TIMER_IRQ_REQ | TIMER_DIV_1024;
-	TIMER_DATA(1) = TIMER_FREQ_1024(1000); // 1kHz frequency
-	irqSet(IRQ_TIMER1, timing_handler);
-	irqEnable(IRQ_TIMER1);
-
-	/* Enabling interrupts */
-	// REG_IME=1;
-
+	// Initialize the gameworld. 
+	game_world_init();
 
 	/*  Turn on the 2D graphics core. */
 	powerOn(POWER_ALL_2D);
  
-	 /*  Configure the VRAM and background control registers. */
+	/*  Configure the VRAM and background control registers. */
 
 	// Place the main screen on the bottom physical screen
 	lcdMainOnBottom(); 
@@ -192,18 +180,17 @@ int main(int argc, char *argv[]) {
 	Ship ship = Ship();
 	sprites.push_back(& ship);
 
-	ship.setDestination(64, 64, 0, 0);
+	ship.setDestination(64, 64, 0);
 	ship.setShown(true);
 
 	Crosshair crosshair = Crosshair();
-	crosshair.setDestination(64, 64, 0, 0);
+	crosshair.setDestination(64, 64, 0);
 	sprites.push_back(& crosshair);
 
 	
 	// Infinite loop to keep the program running
 	while (1) {
-		static volatile int frame = 0;
-		frame++;
+		++current_frame; // XXX - Should use interrupts...
 		
 		static touchPosition touch;
 		touchRead(&touch);
@@ -218,15 +205,15 @@ int main(int argc, char *argv[]) {
 		// --------
 		int held = keysHeld();
 		if (held & KEY_UP) {
-			ship.moveTo(0, -10, frame, 1);
+			ship.moveTo(0, -10, 1);
 		} else if (held & KEY_DOWN) {
-			ship.moveTo(0, 10, frame, 1);
+			ship.moveTo(0, 10, 1);
 		}
 		
 		if (held & KEY_RIGHT) {
-			ship.moveTo(10, 0, frame, 1);
+			ship.moveTo(10, 0, 1);
 		} else if (held & KEY_LEFT) {
-			ship.moveTo(-10, 0, frame, 1);
+			ship.moveTo(-10, 0, 1);
 		}
 		
 		if (held & KEY_A) {
@@ -237,9 +224,10 @@ int main(int argc, char *argv[]) {
 			static int last_touch_x;
 			static int last_touch_y;
 			if (last_touch_x != touch.px || last_touch_y != touch.py) {
-				crosshair.moveTo(touch.px - crosshair.getScreenX(frame), 
-					touch.py - crosshair.getScreenY(frame), 
-					frame, 10
+				crosshair.moveTo(
+						touch.px - crosshair.getScreenX(), 
+						touch.py - crosshair.getScreenY(), 
+						10
 				);
 				last_touch_x = touch.px;
 				last_touch_y = touch.py;
@@ -248,14 +236,7 @@ int main(int argc, char *argv[]) {
 
 			if (held & KEY_L) {
 				// Shooting to the crosshair
-				MovableSprite* projectile = new Particle(ship, frame);
-				
-				float crosshair_x = crosshair.getScreenX(frame);
-					//+ (1 - 0.5 * rand()) * crosshair.getSizeX(frame);
-				float crosshair_y = crosshair.getScreenY(frame);
-					//+ (1 - 0.5 * rand()) * crosshair.getSizeY(frame);
-				projectile->setDestination(crosshair_x, crosshair_y, frame, frame + 150);
-
+				MovableSprite* projectile = new Projectile(ship, crosshair);
 				sprites.push_back(projectile);
 			}
 
@@ -265,27 +246,27 @@ int main(int argc, char *argv[]) {
 		
 		
 		int start_draw_sprite = current_ms;
-		draw_all_sprites(frame);
+		draw_all_sprites();
 		int stop_draw_sprite = current_ms;
 
 		// flip screens
 		flip_vram();
 
-		// erase back screen
-		int start_erase = current_ms;
-		erase_screen(back);
-		int stop_erase = current_ms;
-		
 		// Clear console & Write debugging infos
 		printf("\x1b[2J");
-		printf("nb: %d\n", sprites.size());
+		printf("frame: %d, current_ms:%d\n", current_frame, current_ms);
+		printf("nb sprites: %d\n", sprites.size());
 		printf("draw: %dms, erase: %d\n", 
 				stop_draw_sprite - start_draw_sprite,
 	       			stop_erase - start_erase
 				);
+		
+		// erase back screen
+		int start_erase = current_ms;
+		erase_screen(back);
+		int stop_erase = current_ms;
 
 		PA_CheckLid();
-		
 		swiWaitForVBlank();
 
 	}
