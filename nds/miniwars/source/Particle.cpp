@@ -7,9 +7,9 @@ Particle::Particle(const MovableSprite& emitter)
 	: MovableSprite(SpriteSize_8x8)
 {
 	this->is_shown = true;
-	this->x = emitter.getScreenX();
-	this->y = emitter.getScreenY();
-	this->dest_frame = 0;
+
+	// We are where the emitter is
+	this->setDestination(emitter.getScreenX(), emitter.getScreenY(), current_frame);
 
 	this->color = RGB15(15, 15, 0);
 }

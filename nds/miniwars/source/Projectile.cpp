@@ -8,6 +8,6 @@ Projectile::Projectile(const MovableSprite& emitter, const MovableSprite& target
 
 	float d_x = target.getScreenX() - this->x;
 	float d_y = target.getScreenY() - this->y;
-        this->moveTo(d_x, d_y, 150);
+        this->moveTo(d_x, d_y, 1);
 }
 

@@ -140,11 +140,12 @@ void draw_all_sprites() {
 	// Draws every Sprite on the back screen
 	for(sprite_list::iterator i = sprites.begin(); i != sprites.end(); ++i) {
 		MovableSprite* s = *i;
-		s->draw();
 		if(s->isExpired()) {
 			// Remove the sprite
 			printf("REMOVING SPRITE\n");
 			i = sprites.erase(i);
+		} else {
+			s->draw();
 		}
 	}
 }
@@ -180,11 +181,11 @@ int main(int argc, char *argv[]) {
 	Ship ship = Ship();
 	sprites.push_back(& ship);
 
-	ship.setDestination(64, 64, 0);
+	ship.setPosition(64, 64);
 	ship.setShown(true);
 
 	Crosshair crosshair = Crosshair();
-	crosshair.setDestination(64, 64, 0);
+	crosshair.setPosition(64, 64);
 	sprites.push_back(& crosshair);
 
 	int stop_erase = 0;
@@ -263,6 +264,8 @@ int main(int argc, char *argv[]) {
 				stop_draw_sprite - start_draw_sprite,
 	       			stop_erase - start_erase
 				);
+		
+		printf("&ship:%p, &sprites:%p\n", &ship, &sprites);
 		
 		// erase back screen
 		start_erase = current_ms;

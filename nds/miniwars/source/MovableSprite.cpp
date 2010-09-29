@@ -14,6 +14,11 @@ namespace {
 		return a * a;
 	}
 
+	float nb_frame_needed(float dx, float dy, float speed) {
+		float distance = sqrt(sqr(dx) + sqr(dy));
+		return (distance / speed);
+	}
+
 	int getSpriteSizeX(SpriteSize size) {
 		switch (size) {
 			case SpriteSize_8x8:
@@ -57,6 +62,10 @@ MovableSprite::MovableSprite(SpriteSize size)
 	this->sizeY = getSpriteSizeY(size);
 }
 
+void MovableSprite::setPosition(float x, float y) {
+	this->setDestination(x, y, current_frame);
+}
+
 void MovableSprite::setDestination(float x, float y, unsigned int dest_frame) {
 	// Sets the starting pos to the current pos
 	if (dest_frame > current_frame) {
@@ -73,6 +82,13 @@ void MovableSprite::setDestination(float x, float y, unsigned int dest_frame) {
 	this->frame = current_frame;
 	this->dest_frame = dest_frame;
 
+}
+
+void MovableSprite::setDestination(float x, float y, float speed) {
+	float dx = x - this->getScreenX();
+	float dy = y - this->getScreenY();
+	unsigned int new_dest_frame = current_frame + nb_frame_needed(dx, dy, speed);
+	this->setDestination(x, y, new_dest_frame);
 }
 
 float MovableSprite::getScreenX() const {
@@ -133,13 +149,6 @@ bool MovableSprite::draw() const {
 }
 
 void MovableSprite::moveTo(float dx, float dy, float speed) {
-	float distance = sqrt(sqr(dx) + sqr(dy));
-	int nb_frame_needed = distance / speed;
-
-	this->x = getScreenX();
-	this->y = getScreenY();
-	this->setDestination(
-			this->x + dx, this->y + dy, 
-			current_frame + nb_frame_needed
-		);
+	unsigned int new_dest_frame = current_frame + nb_frame_needed(dx, dy, speed);
+	this->setDestination(this->getScreenX() + dx, this->getScreenY() + dy, new_dest_frame);
 }

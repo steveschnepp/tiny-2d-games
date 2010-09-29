@@ -29,7 +29,9 @@ public:
 
 	MovableSprite(SpriteSize size);
 
+	void setPosition(float x, float y);
 	void setDestination(float x, float y, unsigned int dest_frame);
+	void setDestination(float x, float y, float speed);
 	
 	void moveTo(float dx, float dy, float speed);
 	float getScreenX() const;
