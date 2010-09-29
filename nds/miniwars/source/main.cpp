@@ -187,6 +187,9 @@ int main(int argc, char *argv[]) {
 	crosshair.setDestination(64, 64, 0);
 	sprites.push_back(& crosshair);
 
+	int stop_erase = 0;
+	int start_erase = 0;
+
 	
 	// Infinite loop to keep the program running
 	while (1) {
@@ -262,9 +265,9 @@ int main(int argc, char *argv[]) {
 				);
 		
 		// erase back screen
-		int start_erase = current_ms;
+		start_erase = current_ms;
 		erase_screen(back);
-		int stop_erase = current_ms;
+		stop_erase = current_ms;
 
 		PA_CheckLid();
 		swiWaitForVBlank();
