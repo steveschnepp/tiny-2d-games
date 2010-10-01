@@ -16,6 +16,8 @@ bool PA_CheckLid();
 bool checkReset();
 
 // GFX
+void initGfx();
+
 void Put8bitPixel(int scr_x, int scr_y, unsigned short int color);
 void Put8bitLine(int scr_x1, int scr_y, int src_x2, int src_y2, unsigned short int color);
 void Put8bitRect(int scr_x1, int scr_y, int src_x2, int src_y2, unsigned short int color);
