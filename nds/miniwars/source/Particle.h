@@ -11,6 +11,7 @@ public:
 	Particle(const MovableSprite& emitter);
 
 	virtual bool isExpired() const;
+	virtual bool draw() const;
 };
 
 #endif // __PARTICLE_H__

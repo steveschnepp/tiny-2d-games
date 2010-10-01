@@ -9,8 +9,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include <cmath>
-
 #include <ext/slist>
 #include <list>
 #include <vector>
@@ -122,18 +120,21 @@ void initBackgrounds() {
 typedef std::list<MovableSprite*> sprite_list;
 sprite_list sprites;
 
-void draw_all_sprites() {
+int draw_all_sprites() {
+	int removed_sprites = 0;
 	// Draws every Sprite on the back screen
 	for(sprite_list::iterator i = sprites.begin(); i != sprites.end(); ++i) {
 		MovableSprite* s = *i;
 		if(s->isExpired()) {
 			// Remove the sprite
-			printf("REMOVING SPRITE\n");
 			i = sprites.erase(i);
+			removed_sprites ++;
 		} else if (s->isShown()) {
 			s->draw();
 		}
 	}
+	
+	return removed_sprites;
 }
 
 // Function: main()
@@ -225,22 +226,24 @@ int main(int argc, char *argv[]) {
 		
 		
 		int start_draw_sprite = current_ms;
-		draw_all_sprites();
+		int removed_sprites = draw_all_sprites();
 		int stop_draw_sprite = current_ms;
 
 		// flip screens
 		flip_vram();
 
 		// Clear console & Write debugging infos
-		printf("\x1b[2J");
 		printf("frame: %d, current_ms:%d\n", current_frame, current_ms);
-		printf("nb sprites: %d\n", sprites.size());
+		printf("nb sprites: %d, removed: %d\n", sprites.size(), removed_sprites);
 		printf("draw: %dms, erase: %d\n", 
 				stop_draw_sprite - start_draw_sprite,
 	       			stop_erase - start_erase
-				);
+			);
 		
-		printf("&ship:%p, &sprites:%p\n", &ship, &sprites);
+		printf("ship:(%d,%d), ch:(%d,%d)\n", 
+				int(ship.getScreenX()), int(ship.getScreenY()), 
+				int(crosshair.getScreenX()), int(crosshair.getScreenY())
+			);
 		
 		// erase back screen
 		start_erase = current_ms;
@@ -249,7 +252,7 @@ int main(int argc, char *argv[]) {
 
 		PA_CheckLid();
 		swiWaitForVBlank();
-
+		printf("\x1b[2J");
 	}
 	
 	return 0;

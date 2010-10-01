@@ -68,6 +68,22 @@ void erase_screen_swi(uint16* screen) {
 	swiFastCopy(&colcol, screen, copy_size | COPY_MODE_FILL);
 }
 
+void erase_screen_loopmemset(uint16* screen) {
+	const int copy_size = SCREEN_WIDTH * SCREEN_HEIGHT;
+	const uint16 col = RGB15(0, 0, 0) | BIT(15);
+	for (uint16* ptr = screen; ptr < screen + copy_size; ptr++) {
+		*ptr = col;
+	}
+}
+
+void erase_screen_tab(uint16* screen) {
+	const int copy_size = SCREEN_WIDTH * SCREEN_HEIGHT;
+	const uint16 col = RGB15(0, 0, 0) | BIT(15);
+	for (int i = 0; i < copy_size; i++) {
+		screen[i] = col;
+	}
+}
+
 void erase_screen_memset(uint16* screen) {
 	// Fill the whole screen buffer with '\0'.
 	// Warning, the screen is 16bit whereas '\0' is only 8bit, but it works
@@ -112,6 +128,26 @@ void Put8bitLine(int scr_x1, int scr_y1, int scr_x2, int scr_y2, unsigned short 
 	// Crude way of writing lines
 	for(int x = scr_x1; x <= scr_x2; x++) {
 		int y = scr_y1 + (scr_y2 - scr_y1) * (x - scr_x1) / (scr_x2 - scr_x1) ;
+		Put8bitPixel(x, y, color); 
+	}
+}
+
+void Put8bitRect(int scr_x1, int scr_y1, int scr_x2, int scr_y2, unsigned short int color) {
+	if (scr_x1 > scr_x2) {
+		// Always go from left to right & high to low
+		int tmp_x = scr_x1;
+		scr_x1 = scr_x2;
+		scr_x2 = tmp_x;
+	} 
+	if (scr_y1 > scr_y1) {
+		int tmp_y = scr_y1;
+		scr_y1 = scr_y2;
+		scr_y2 = tmp_y;
+	}
+
+	// Crude way of writing lines
+	for(int x = scr_x1; x <= scr_x2; x++) 
+	for(int y = scr_y1; y <= scr_y2; y++) {
 		Put8bitPixel(x, y, color); 
 	}
 }

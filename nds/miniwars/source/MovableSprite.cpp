@@ -131,11 +131,15 @@ bool MovableSprite::draw() const {
 	int src_y = getScreenY();
 	int current_size_x = getSizeX();
 	int current_size_y = getSizeY();
-	for (int ix = - current_size_x/2; ix < current_size_x/2; ix++) {
-		for (int iy = - current_size_y/2; iy < current_size_y/2; iy++) {
-			Put8bitPixel(src_x + ix, src_y + iy, this->color);
-		}
-	}
+
+	Put8bitRect(
+		src_x - current_size_x/2,
+		src_y - current_size_y/2,
+		src_x + current_size_x/2,
+		src_y + current_size_y/2,
+		color
+	);
+
 	return true;
 }
 
