@@ -22,6 +22,6 @@ while (<>) {
 	$r = int($r / 8);
 	$g = int($g / 8);
 	$b = int($b / 8);
-	print "#define CLR_$color RGB15($r, $g, $b)";
+	print "#define RGB15_$color RGB15($r, $g, $b)";
 	print "\n";
 }

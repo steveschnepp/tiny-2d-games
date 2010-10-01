@@ -3,6 +3,7 @@
 
 #include "game_world.h"
 #include "nds_utils.h"
+#include "colors.h"
 
 Monster::Monster(int x, int y, const MovableSprite& target) 
 	: MovableSprite(SpriteSize_64x64), target(target), life(16)
@@ -10,7 +11,7 @@ Monster::Monster(int x, int y, const MovableSprite& target)
 	this->is_shown = true;
 	this->x = x;
 	this->y = y;
-	this->color = RGB15(15, 0, 0);
+	this->color = RGB15_red;
 }
 
 void Monster::update() {

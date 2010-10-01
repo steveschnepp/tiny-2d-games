@@ -3,6 +3,7 @@
 
 #include "nds_utils.h"
 #include "game_world.h"
+#include "colors.h"
 
 Particle::Particle(const MovableSprite& emitter) 
 	: MovableSprite(SpriteSize_8x8)
@@ -12,7 +13,7 @@ Particle::Particle(const MovableSprite& emitter)
 	// We are where the emitter is
 	this->setPosition(emitter.getScreenX(), emitter.getScreenY());
 
-	this->color = RGB15(15, 15, 0);
+	this->color = RGB15_yellow;
 }
 
 bool Particle::isExpired() const {

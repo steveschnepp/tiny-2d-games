@@ -6,6 +6,7 @@
 
 #include "nds_utils.h"
 #include "game_world.h"
+#include "colors.h"
 
 namespace {
 	volatile int global_idx_sprite = 0;
@@ -43,7 +44,7 @@ namespace {
 };
 
 MovableSprite::MovableSprite(SpriteSize size) 
-	: is_shown(false), color(RGB15(15, 15, 15))
+	: is_shown(false), color(RGB15_white)
 {
 	// Memory Allocation 
 	this->idx_sprite = ::global_idx_sprite++;

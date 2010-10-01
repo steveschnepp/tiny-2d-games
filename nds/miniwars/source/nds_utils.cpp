@@ -4,6 +4,7 @@
 #include <cstring> 
 
 #include "nds_utils.h"
+#include "colors.h"
 
 uint16* front = VRAM_A;
 uint16* back = VRAM_B;
@@ -62,7 +63,7 @@ void flip_vram()
 }
 
 void erase_screen_swi(uint16* screen) {
-	const uint16 col = RGB15(0, 0, 0) | BIT(15);
+	const uint16 col = RGB15_black | BIT(15);
 	const uint32 colcol = col | col << 16;
 	const int copy_size = SCREEN_WIDTH * SCREEN_HEIGHT * sizeof(uint16) / sizeof(uint32);
 	swiFastCopy(&colcol, screen, copy_size | COPY_MODE_FILL);
@@ -70,7 +71,7 @@ void erase_screen_swi(uint16* screen) {
 
 void erase_screen_loopmemset(uint16* screen) {
 	const int copy_size = SCREEN_WIDTH * SCREEN_HEIGHT;
-	const uint16 col = RGB15(0, 0, 0) | BIT(15);
+	const uint16 col = RGB15_black | BIT(15);
 	for (uint16* ptr = screen; ptr < screen + copy_size; ptr++) {
 		*ptr = col;
 	}
@@ -78,7 +79,7 @@ void erase_screen_loopmemset(uint16* screen) {
 
 void erase_screen_tab(uint16* screen) {
 	const int copy_size = SCREEN_WIDTH * SCREEN_HEIGHT;
-	const uint16 col = RGB15(0, 0, 0) | BIT(15);
+	const uint16 col = RGB15_black | BIT(15);
 	for (int i = 0; i < copy_size; i++) {
 		screen[i] = col;
 	}

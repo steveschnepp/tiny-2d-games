@@ -62,8 +62,8 @@ void update_monsters() {
 }
 
 void draw_cpu_usage(int usage) {
-	const unsigned int color_busy = CLR_green;
-	const unsigned int color_free = CLR_DarkGreen;
+	const unsigned int color_busy = RGB15_green;
+	const unsigned int color_free = RGB15_DarkGreen;
 	// Busy
 	for (int i = 0; i < usage; i++) { 
 		Put8bitPixel(i, 0, color_busy);

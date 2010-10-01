@@ -1,12 +1,14 @@
 // (c) LGPL 2008-2010 Steve Schnepp <steve.schnepp@pwkf.org>
 #include "Projectile.h"
 
+#include "colors.h"
+
 #include <cmath>
 
 Projectile::Projectile(const MovableSprite& emitter, const MovableSprite& target) 
 	: Particle(emitter)
 {
-	this->color = RGB15(15, 15, 0);
+	this->color = RGB15_yellow;
 
 	float d_randx = rand() % target.getSizeX() - target.getSizeX() / 2;
 	float d_randy = rand() % target.getSizeY() - target.getSizeY() / 2;

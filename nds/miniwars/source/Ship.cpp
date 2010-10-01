@@ -2,11 +2,12 @@
 #include "Ship.h"
 
 #include "nds_utils.h"
+#include "colors.h"
 
 Ship::Ship() 
 	: MovableSprite(SpriteSize_64x64)
 {
-	this->color = RGB15(0, 0, 15);
+	this->color = RGB15_blue;
 }
 
 bool Ship::draw() const {
