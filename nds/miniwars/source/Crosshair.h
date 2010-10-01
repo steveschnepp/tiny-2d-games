@@ -10,6 +10,8 @@ public:
 
 	virtual int getSizeX() const;
 	virtual int getSizeY() const;
+
+	virtual bool draw() const;
 	
 private:
 	int getSize() const;

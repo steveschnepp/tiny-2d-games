@@ -37,8 +37,9 @@ public:
 	float getScreenX() const;
 	float getScreenY() const;
 
-	bool draw() const;
+	virtual bool draw() const;
 
+	bool isShown() const;
 	bool setShown(bool is_shown);
 	virtual bool isExpired() const;
 };

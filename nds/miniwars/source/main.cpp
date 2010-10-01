@@ -10,7 +10,6 @@
 #include <stdlib.h>
 
 #include <cmath>
-#include <cstring>
 
 #include <ext/slist>
 #include <list>
@@ -24,19 +23,6 @@
 #include "Crosshair.h"
 #include "Particle.h"
 #include "Projectile.h"
-
-void flip_vram()
-{
-	if (front == VRAM_A) {
-		front = VRAM_B;
-		back = VRAM_A;
-		videoSetMode(MODE_FB1);			
-	} else {
-		front = VRAM_A;
-		back = VRAM_B;
-		videoSetMode(MODE_FB0);			
-	}
-}
 
 void initVideo() {
     /*
@@ -144,21 +130,10 @@ void draw_all_sprites() {
 			// Remove the sprite
 			printf("REMOVING SPRITE\n");
 			i = sprites.erase(i);
-		} else {
+		} else if (s->isShown()) {
 			s->draw();
 		}
 	}
-}
-
-void erase_screen_memset(uint16* screen) {
-	// Fill the whole screen buffer with 0
-	memset(screen, 0, 192*256*2);
-}
-
-void erase_screen(uint16* screen) {
-	const uint16 col = RGB15(0, 0, 0) | BIT(15);
-	const uint32 colcol = col | col << 16;
-	swiFastCopy(&colcol, screen, 192*256*2/4 | COPY_MODE_FILL);
 }
 
 // Function: main()

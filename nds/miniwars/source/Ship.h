@@ -8,6 +8,8 @@ class Ship : public MovableSprite {
 public:
 	Ship();
 
+	virtual bool draw() const;
+
 private:
 };
 

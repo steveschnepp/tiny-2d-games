@@ -40,17 +40,6 @@ namespace {
 				return 0;
 		}
 	}
-
-	void Put8bitPixel(int scr_x, int scr_y, 
-			unsigned short int color) {
-		// Don't put pixel outside screen
-		if (scr_x < 0 || scr_x > SCREEN_WIDTH - 1) return;
-		if (scr_y < 0 || scr_y > SCREEN_HEIGHT - 1) return;
-
-		// Framebuffering put them
-		back[scr_x + scr_y * SCREEN_WIDTH] = color;
-	}
-
 };
 
 MovableSprite::MovableSprite(SpriteSize size) 
@@ -133,9 +122,11 @@ bool MovableSprite::setShown(bool is_shown) {
 	return old_value;
 }
 
+bool MovableSprite::isShown() const {
+	return this->is_shown;
+}
+
 bool MovableSprite::draw() const {
-	if (! this->is_shown) return false;
-	
 	int src_x = getScreenX();
 	int src_y = getScreenY();
 	int current_size_x = getSizeX();

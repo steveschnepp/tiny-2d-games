@@ -1,6 +1,7 @@
 // (c) LGPL 2008-2010 Steve Schnepp <steve.schnepp@pwkf.org>
 #include "Crosshair.h"
 
+#include "nds_utils.h"
 #include "game_world.h"
 
 Crosshair::Crosshair() 
@@ -21,3 +22,25 @@ int Crosshair::getSizeX() const {
 int Crosshair::getSizeY() const {
 	return getSize();
 }
+
+bool Crosshair::draw() const {
+	int x = this->getScreenX();
+	int y = this->getScreenY();
+
+	int szx = this->getSizeX();
+	int szy = this->getSizeY();
+
+	Put8bitLine(
+		x - szx / 2,	y + szy / 2,
+		x + szx / 2, 	y - szy / 2,
+		color
+	);
+	Put8bitLine(
+		x - szx / 2,	y - szy / 2,
+		x + szx / 2, 	y + szy / 2,
+		color
+	);
+
+	return true;
+}
+
