@@ -79,6 +79,7 @@ int main(int argc, char *argv[]) {
     }
 
     // wait for vblank
+    int cpu_usage = REG_VCOUNT;
     swiWaitForVBlank();
     scanKeys();
     down = keysDown();
@@ -88,6 +89,7 @@ int main(int argc, char *argv[]) {
 	consoleClear(); 
 	static int frame = 0;
 	printf("frame: %d\n", frame ++);
+	printf("cpu: %d\n", cpu_usage);
     }
 
     // copy to vram
