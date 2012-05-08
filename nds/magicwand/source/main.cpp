@@ -133,7 +133,7 @@ void initVideo() {
                      VRAM_C_SUB_BG_0x06200000,
                      VRAM_D_LCD);
 	*/
-    vramSetMainBanks(VRAM_A_LCD, VRAM_B_LCD, VRAM_C_SUB_BG, VRAM_D_SUB_SPRITE);							
+    vramSetPrimaryBanks(VRAM_A_LCD, VRAM_B_LCD, VRAM_C_SUB_BG, VRAM_D_SUB_SPRITE);							
 
 	//set main display to render directly from the frame buffer
 	videoSetMode(MODE_FB0);
