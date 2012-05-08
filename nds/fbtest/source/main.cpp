@@ -19,6 +19,8 @@ Entity myEntities[NUM_ENTITIES];
 int main(int argc, char *argv[]) {
   int down;
 
+  // We use the touch screen for graphical stuff
+  lcdMainOnBottom();
 
   // set up video mode
   videoSetMode(MODE_5_2D);
