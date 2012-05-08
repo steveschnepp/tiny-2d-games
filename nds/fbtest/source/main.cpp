@@ -1,4 +1,4 @@
-// Thx to mtheall for the skel :)
+// Thx to https://github.com/mtheall for the skel :)
 #include <nds.h>
 #include <stdlib.h>
 #include <stdio.h>
@@ -14,8 +14,6 @@ struct Entity {
   int color;
   f32 x, y;
   f32 dx, dy;
-  inline int px() const { return x.getInt(); }
-  inline int py() const { return y.getInt(); }
 };
 
 const size_t NUM_ENTITIES = 4096;
@@ -23,6 +21,7 @@ Entity myEntities[NUM_ENTITIES];
 
 int main(int argc, char *argv[]) {
   int down;
+  static u32 frame = 0;
 
   // We use the touch screen for graphical stuff
   lcdMainOnBottom();
@@ -67,6 +66,7 @@ int main(int argc, char *argv[]) {
 
     // move the entities
     for(u32 i = 0; i < NUM_ENTITIES; i++) {
+      if (i > frame) break; 
       Entity *e = &myEntities[i];
 
       // move the entity
@@ -92,7 +92,7 @@ int main(int argc, char *argv[]) {
       }
 
       // copy to buffer
-      myBmp[e->py()][e->px()] = e->color;
+      myBmp[e->y.getInt()][e->x.getInt()] = e->color;
     }
 
     // wait for vblank
@@ -104,9 +104,8 @@ int main(int argc, char *argv[]) {
     // Print debug info
     { 
 	consoleClear(); 
-	static int frame = 0;
 	printf("frame: %d\n", frame ++);
-	printf("cpu: %f\n", cpu_usage / 2.56f);
+	printf("cpu: %.0f%%\n", cpu_usage / 1.92f);
     }
 
     // copy to vram
