@@ -32,14 +32,6 @@ void flip_vram()
 }
 
 
-static void dmaFillWordsAsynch(const void* src, void* dest, uint32 size) {
-	DMA_SRC(3) = (uint32)src;
-	DMA_DEST(3) = (uint32)dest;
-	DMA_CR(3) = DMA_SRC_FIX | DMA_COPY_WORDS | (size>>2);
-	while(DMA_CR(3) & DMA_BUSY);
-}
-
-
 struct Particle {
 	int x;
 	int y;
