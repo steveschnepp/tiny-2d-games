@@ -78,16 +78,16 @@ int main(int argc, char *argv[]) {
         e->x = 255.0f;
         e->dx = -(e->dx) ;
       }
-      if(e->x < 0.0f) {
-        e->x = 0.0f;
+      if(e->x < 0) {
+        e->x = 0;
         e->dx = -(e->dx) ;
       }
       if(e->y > 191.0f) {
         e->y = 191.0f;
         e->dy = -(e->dy) ;
       }
-      if(e->y < 0.0f) {
-        e->y = 0.0f;
+      if(e->y < 0) {
+        e->y = 0;
         e->dy = -(e->dy) ;
       }
 
