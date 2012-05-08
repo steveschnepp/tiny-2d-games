@@ -4,15 +4,18 @@
 #include <stdio.h>
 #include <string.h>
 
+#include "fixed.h"
+
 u16 myPal[256];
 u8  myBmp[192][256];
 
 struct Entity {
+  Entity() : x(0), y(0), dx(0), dy(0) {}
   int color;
-  float x, y;
-  float dx, dy;
-  inline int px() const { return int(x); }
-  inline int py() const { return int(y); }
+  f32 x, y;
+  f32 dx, dy;
+  inline int px() const { return x.getInt(); }
+  inline int py() const { return y.getInt(); }
 };
 
 const size_t NUM_ENTITIES = 4096;
@@ -48,11 +51,11 @@ int main(int argc, char *argv[]) {
 
   // initialize the entities
   for(u32 i = 0; i < NUM_ENTITIES; i++) {
-    myEntities[i].x     = rand()%256;
-    myEntities[i].y     = rand()%192;
+    myEntities[i].x     = rand()%256 * 1.0f;
+    myEntities[i].y     = rand()%192 * 1.0f;
 
-    myEntities[i].dx     = (rand()%256 - 128) / 256.0;
-    myEntities[i].dy     = (rand()%256 - 128) / 256.0;
+    myEntities[i].dx     = (rand()%256 - 128) / 256.0f;
+    myEntities[i].dy     = (rand()%256 - 128) / 256.0f;
 
     myEntities[i].color = rand()%255+1; // don't allow transparent
   }
@@ -71,20 +74,20 @@ int main(int argc, char *argv[]) {
       e->y += e->dy;
 
       // clamp
-      if(e->x > 255) {
-        e->x = 255;
+      if(e->x > 255.0f) {
+        e->x = 255.0f;
         e->dx = -(e->dx) ;
       }
-      if(e->x < 0) {
-        e->x = 0;
+      if(e->x < 0.0f) {
+        e->x = 0.0f;
         e->dx = -(e->dx) ;
       }
-      if(e->y > 191) {
-        e->y = 191;
+      if(e->y > 191.0f) {
+        e->y = 191.0f;
         e->dy = -(e->dy) ;
       }
-      if(e->y < 0) {
-        e->y = 0;
+      if(e->y < 0.0f) {
+        e->y = 0.0f;
         e->dy = -(e->dy) ;
       }
 
@@ -103,7 +106,7 @@ int main(int argc, char *argv[]) {
 	consoleClear(); 
 	static int frame = 0;
 	printf("frame: %d\n", frame ++);
-	printf("cpu: %d\n", cpu_usage);
+	printf("cpu: %f\n", cpu_usage / 2.56f);
     }
 
     // copy to vram
