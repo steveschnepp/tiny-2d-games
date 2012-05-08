@@ -1,6 +1,7 @@
 // Thx to mtheall for the skel :)
 #include <nds.h>
 #include <stdlib.h>
+#include <stdio.h>
 #include <string.h>
 
 u16 myPal[256];
@@ -18,30 +19,28 @@ Entity myEntities[NUM_ENTITIES];
 int main(int argc, char *argv[]) {
   int down;
 
+
   // set up video mode
   videoSetMode(MODE_5_2D);
-  videoSetModeSub(MODE_5_2D);
-
   // set up VRAM banks
-  vramSetPrimaryBanks(VRAM_A_MAIN_BG,
-                      VRAM_B_MAIN_SPRITE,
-                      VRAM_C_SUB_BG,
-                      VRAM_D_SUB_SPRITE);
+  vramSetBankA(VRAM_A_MAIN_BG);
+  vramSetBankB(VRAM_B_MAIN_SPRITE);
+
+  // Set up console
+  videoSetModeSub(MODE_0_2D);
+  consoleDemoInit();
 
   // initialize the backgrounds
   int main = bgInit   (2, BgType_Bmp8, BgSize_B8_256x256, 0, 0);
-  int sub  = bgInitSub(2, BgType_Bmp8, BgSize_B8_256x256, 0, 0);
 
   // clear the backgrounds
   memset(bgGetGfxPtr(main), 0, 256*256);
-  memset(bgGetGfxPtr(sub),  0, 256*256);
 
   // fill in the palette
   myPal[0] = RGB15(0, 0, 0);
   for(u32 i = 1; i < sizeof(myPal); i++)
     myPal[i] = RGB15(rand()%31, rand()%31, rand()%31);
   memcpy(BG_PALETTE, myPal, sizeof(myPal));
-  memcpy(BG_PALETTE_SUB, myPal, sizeof(myPal));
 
   // initialize the entities
   for(u32 i = 0; i < NUM_ENTITIES; i++) {
@@ -82,9 +81,15 @@ int main(int argc, char *argv[]) {
     scanKeys();
     down = keysDown();
 
+    // Print debug info
+    { 
+	consoleClear(); 
+	static int frame = 0;
+	printf("frame: %d\n", frame ++);
+    }
+
     // copy to vram
     memcpy(bgGetGfxPtr(main), myBmp, sizeof(myBmp));
-    memcpy(bgGetGfxPtr(sub),  myBmp, sizeof(myBmp));
   } while(!down);
 
   return 0;
