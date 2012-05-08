@@ -11,8 +11,9 @@ struct Entity {
   int y;
   int color;
 };
-Entity myEntities[4096];
-#define NUM_ENTITIES (sizeof(myEntities)/sizeof(myEntities[0]))
+
+const size_t NUM_ENTITIES = 4096;
+Entity myEntities[NUM_ENTITIES];
 
 int main(int argc, char *argv[]) {
   int down;
