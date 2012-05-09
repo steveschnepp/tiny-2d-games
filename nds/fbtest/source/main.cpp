@@ -16,7 +16,7 @@ struct Entity {
   f32 dx, dy;
 };
 
-const size_t NUM_ENTITIES = 4096;
+const size_t NUM_ENTITIES = 4096 * 10;
 Entity myEntities[NUM_ENTITIES];
 
 int main(int argc, char *argv[]) {
@@ -61,12 +61,15 @@ int main(int argc, char *argv[]) {
 
   // do stuff
   do {
+    frame++;
+    unsigned int nb_particles = frame * 4;
+    cpuStartTiming(0);
     // clear the buffer
     memset(myBmp, 0, sizeof(myBmp));
 
     // move the entities
-    for(u32 i = 0; i < NUM_ENTITIES; i++) {
-      if (i > frame) break; 
+    if (!down) for(u32 i = 0; i < NUM_ENTITIES; i++) {
+      if (i > nb_particles) break; 
       Entity *e = &myEntities[i];
 
       // move the entity
@@ -95,22 +98,27 @@ int main(int argc, char *argv[]) {
       myBmp[e->y.getInt()][e->x.getInt()] = e->color;
     }
 
+    int ticks_move = cpuGetTiming();
+
     // wait for vblank
     int cpu_usage = REG_VCOUNT;
     swiWaitForVBlank();
+
+    int ticks_done = cpuEndTiming();
     scanKeys();
-    down = keysDown();
+    down = keysCurrent();
 
     // Print debug info
     { 
 	consoleClear(); 
-	printf("frame: %d\n", frame ++);
+	printf("nb: %d\n", nb_particles);
 	printf("cpu: %.0f%%\n", cpu_usage / 1.92f);
+	printf("ticks: %d/%d (%.0f)\n", ticks_move, ticks_done, (100.0f * ticks_move / ticks_done));
     }
 
     // copy to vram
     memcpy(bgGetGfxPtr(main), myBmp, sizeof(myBmp));
-  } while(!down);
+  } while(true);
 
   return 0;
 }
