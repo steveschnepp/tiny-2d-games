@@ -19,6 +19,17 @@ struct Entity {
 const size_t NUM_ENTITIES = 4096 * 10;
 Entity myEntities[NUM_ENTITIES];
 
+f32 abs(f32 value) {
+	if (value < 0) return -value; 
+	return value; 
+}
+
+f32 normalize(f32 value, f32 min, f32 max) {
+	if (value < min) return min;
+	if (value > max) return max;
+	return value;
+}
+
 int main(int argc, char *argv[]) {
   int down;
   static u32 frame = 0;
@@ -65,6 +76,8 @@ int main(int argc, char *argv[]) {
     myEntities[i].color = rand()%16+16; // don't allow transparent
   }
 
+  Entity dst;
+
   // do stuff
   do {
     frame++;
@@ -74,9 +87,31 @@ int main(int argc, char *argv[]) {
     memset(myBmp, 0, sizeof(myBmp));
 
     // move the entities
-    if (!down) for(u32 i = 0; i < NUM_ENTITIES; i++) {
+    for(u32 i = 0; i < NUM_ENTITIES; i++) {
       if (i > nb_particles) break; 
       Entity *e = &myEntities[i];
+
+      if (down & KEY_TOUCH) {
+	dst.color = 1;
+
+	touchPosition touch;
+	touchRead(&touch);
+
+        f32 touchx = inttof32(touch.px);
+        f32 touchy = inttof32(touch.py);
+
+	if ( ( abs(touchx - e->x ) + abs(touchy - e->y) ) < 2.0f) {
+		e->dx = 0;
+		e->dy = 0;
+	} else {
+		// Every particle wants to go @ dst
+		f32 ax = f32(inttof32(1)) / (touchx - e->x);
+		f32 ay = f32(inttof32(1)) / (touchy - e->y);
+
+		e->dx += ax;
+		e->dy += ay;
+	}
+      } else dst.color = 0;
 
       // move the entity
       e->x += e->dx;
@@ -103,6 +138,8 @@ int main(int argc, char *argv[]) {
       // copy to buffer
       myBmp[e->y.getInt()][e->x.getInt()] = e->color;
     }
+
+    if (dst.color) myBmp[dst.y.getInt()][dst.x.getInt()] = dst.color;
 
     int ticks_move = cpuGetTiming();
 
