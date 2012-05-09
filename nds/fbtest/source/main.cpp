@@ -44,8 +44,14 @@ int main(int argc, char *argv[]) {
 
   // fill in the palette
   myPal[0] = RGB15(0, 0, 0);
-  for(u32 i = 1; i < sizeof(myPal); i++)
-    myPal[i] = RGB15(rand()%31, rand()%31, rand()%31);
+  myPal[1] = RGB15(31, 0, 0);
+  myPal[2] = RGB15(0, 31, 0);
+  myPal[3] = RGB15(0, 0, 31);
+
+  // 16 colors for Entities
+  for(u32 i = 16; i < 32; i++) { 
+    myPal[i] = RGB15(i, i, i);
+  }
   memcpy(BG_PALETTE, myPal, sizeof(myPal));
 
   // initialize the entities
@@ -56,7 +62,7 @@ int main(int argc, char *argv[]) {
     myEntities[i].dx     = (rand()%256 - 128) / 256.0f;
     myEntities[i].dy     = (rand()%256 - 128) / 256.0f;
 
-    myEntities[i].color = rand()%255+1; // don't allow transparent
+    myEntities[i].color = rand()%16+16; // don't allow transparent
   }
 
   // do stuff
