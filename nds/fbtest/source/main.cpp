@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include <list>
 
 #include "fixed.h"
 
@@ -10,14 +11,14 @@ u16 myPal[256];
 u8  myBmp[192][256];
 
 struct Entity {
-	Entity() : x(0), y(0), dx(0), dy(0) {}
-	int color;
+	Entity() : x(0), y(0), dx(0), dy(0), color(0) {}
 	f32 x, y;
 	f32 dx, dy;
+	int color;
 };
 
 const size_t NUM_ENTITIES = 4096 * 10;
-Entity myEntities[NUM_ENTITIES];
+std::list<Entity*> myEntities;
 
 f32 abs(f32 value) {
 	if (value < 0) return -value; 
@@ -71,13 +72,15 @@ int main(int argc, char *argv[]) {
 
 	// initialize the entities
 	for(u32 i = 0; i < NUM_ENTITIES; i++) {
-		myEntities[i].x     = rand()%256 * 1.0f;
-		myEntities[i].y     = rand()%192 * 1.0f;
+		Entity* e = new Entity();
+		e->x     = rand()%256 * 1.0f;
+		e->y     = rand()%192 * 1.0f;
 
-		myEntities[i].dx     = (rand()%256 - 128) / 256.0f;
-		myEntities[i].dy     = (rand()%256 - 128) / 256.0f;
+		e->dx     = (rand()%256 - 128) / 256.0f;
+		e->dy     = (rand()%256 - 128) / 256.0f;
 
-		myEntities[i].color = rand()%16+16; // don't allow transparent
+		e->color = rand()%16+16; // don't allow transparent
+		myEntities.push_back(e);
 	}
 
 	Entity dst;
@@ -99,9 +102,10 @@ int main(int argc, char *argv[]) {
 		}
 
 		// move the entities
-		for(u32 i = 0; i < NUM_ENTITIES; i++) {
-			if (i > nb_particles) break; 
-      Entity *e = &myEntities[i];
+		unsigned int i = 0;
+		for(auto it = myEntities.begin(); it != myEntities.end(); it++) {
+			if (i++ > nb_particles) break; 
+      Entity* e = *it;
 
       if (down & KEY_TOUCH) {
 	dst.color = 1;
