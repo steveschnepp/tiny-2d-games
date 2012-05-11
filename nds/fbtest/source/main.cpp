@@ -71,6 +71,9 @@ int main(int argc, char *argv[]) {
 	memcpy(BG_PALETTE, myPal, sizeof(myPal));
 
 	Entity dst;
+	dst.color = 1;
+	Entity src;
+	src.color = 2;
 
 	// do stuff
 	do {
@@ -83,8 +86,8 @@ int main(int argc, char *argv[]) {
 			// Add 16 particles
 			for (size_t i = 0; i < 16; i ++) {
 				Entity* e = new Entity();
-				e->x     = rand()%256 * 1.0f;
-				e->y     = rand()%192 * 1.0f;
+				e->x     = src.x;
+				e->y     = src.y;
 
 				e->dx     = (rand()%256 - 128) / 256.0f;
 				e->dy     = (rand()%256 - 128) / 256.0f;
@@ -103,32 +106,38 @@ int main(int argc, char *argv[]) {
 			}
 		}
 
-		// move the entities
-		for(auto it = myEntities.begin(); it != myEntities.end(); it++) {
-      Entity* e = *it;
-
       if (down & KEY_TOUCH) {
-	dst.color = 1;
 
 	touchPosition touch;
 	touchRead(&touch);
 
-        f32 touchx = inttof32(touch.px);
-        f32 touchy = inttof32(touch.py);
+	if (down & KEY_DOWN) {
+              src.x = inttof32(touch.px);
+              src.y = inttof32(touch.py);
+        } else {
+  	      dst.x = inttof32(touch.px);
+              dst.y = inttof32(touch.py);
+        }
+      }
 
-        f32 dist_2 = sqr(touchx - e->x) + sqr(touchy - e->y);
-	if ( dist_2 < 4.0f) {
+
+	// move the entities
+	for(auto it = myEntities.begin(); it != myEntities.end(); it++) {
+      Entity* e = *it;
+
+
+        f32 dist_2 = sqr(dst.x - e->x) + sqr(dst.y - e->y);
+	if ( dist_2 < 6.0f) {
 		e->dx = 0;
 		e->dy = 0;
 	} else {
 		// Every particle wants to go @ dst
-		f32 ax = (touchx - e->x) / dist_2;
-		f32 ay = (touchy - e->y) / dist_2;
+		f32 ax = (dst.x - e->x) / dist_2;
+		f32 ay = (dst.y - e->y) / dist_2;
 
 		e->dx += ax;
 		e->dy += ay;
 	}
-      } else dst.color = 0;
 
       // move the entity
       e->x += e->dx;
@@ -160,7 +169,8 @@ int main(int argc, char *argv[]) {
       myBmp[e->y.getInt()][e->x.getInt()] = e->color;
     }
 
-    if (dst.color) myBmp[dst.y.getInt()][dst.x.getInt()] = dst.color;
+    myBmp[dst.y.getInt()][dst.x.getInt()] = dst.color;
+    myBmp[src.y.getInt()][src.x.getInt()] = src.color;
 
     int ticks_move = cpuGetTiming();
 
