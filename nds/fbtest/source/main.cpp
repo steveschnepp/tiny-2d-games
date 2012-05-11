@@ -70,23 +70,9 @@ int main(int argc, char *argv[]) {
 	}
 	memcpy(BG_PALETTE, myPal, sizeof(myPal));
 
-	// initialize the entities
-	for(u32 i = 0; i < NUM_ENTITIES; i++) {
-		Entity* e = new Entity();
-		e->x     = rand()%256 * 1.0f;
-		e->y     = rand()%192 * 1.0f;
-
-		e->dx     = (rand()%256 - 128) / 256.0f;
-		e->dy     = (rand()%256 - 128) / 256.0f;
-
-		e->color = rand()%16+16; // don't allow transparent
-		myEntities.push_back(e);
-	}
-
 	Entity dst;
 
 	// do stuff
-	unsigned int nb_particles = 0;
 	do {
 		frame++;
 		cpuStartTiming(0);
@@ -94,17 +80,31 @@ int main(int argc, char *argv[]) {
 		memset(myBmp, 0, sizeof(myBmp));
 
 		if (down & KEY_R) {
-			nb_particles = normalize<int>(nb_particles + 16, 0, NUM_ENTITIES);
+			// Add 16 particles
+			for (size_t i = 0; i < 16; i ++) {
+				Entity* e = new Entity();
+				e->x     = rand()%256 * 1.0f;
+				e->y     = rand()%192 * 1.0f;
+
+				e->dx     = (rand()%256 - 128) / 256.0f;
+				e->dy     = (rand()%256 - 128) / 256.0f;
+
+				e->color = rand()%16+16; // don't allow transparent
+				myEntities.push_back(e);
+			}
 		}
 
 		if (down & KEY_L) {
-			nb_particles = normalize<int>(nb_particles - 16, 0, NUM_ENTITIES);
+			// Remove 16 particles @ front
+			for (size_t i = 0; i < 16 && myEntities.size() > 0; i ++) {
+				auto first = myEntities.begin();
+				delete *first;
+				myEntities.erase(first);
+			}
 		}
 
 		// move the entities
-		unsigned int i = 0;
 		for(auto it = myEntities.begin(); it != myEntities.end(); it++) {
-			if (i++ > nb_particles) break; 
       Entity* e = *it;
 
       if (down & KEY_TOUCH) {
@@ -175,7 +175,7 @@ int main(int argc, char *argv[]) {
     // Print debug info
     { 
 	consoleClear(); 
-	printf("nb: %d\n", nb_particles);
+	printf("nb: %d\n", myEntities.size());
 	printf("cpu: %.0f%%\n", cpu_usage / 1.92f);
 	printf("ticks: %d/%d (%.0f)\n", ticks_move, ticks_done, (100.0f * ticks_move / ticks_done));
     }
