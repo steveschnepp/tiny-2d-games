@@ -7,7 +7,6 @@
 
 #include "fixed.h"
 
-u16 myPal[256];
 u8  myBmp[192][256];
 
 u32 xor128(void) {
@@ -71,16 +70,15 @@ int main(int argc, char *argv[]) {
 	memset(bgGetGfxPtr(main), 0, 256*256);
 
 	// fill in the palette
-	myPal[0] = RGB15(0, 0, 0);
-	myPal[1] = RGB15(31, 0, 0);
-	myPal[2] = RGB15(0, 31, 0);
-	myPal[3] = RGB15(0, 0, 31);
+	BG_PALETTE[0] = RGB15(0, 0, 0);
+	BG_PALETTE[1] = RGB15(31, 0, 0);
+	BG_PALETTE[2] = RGB15(0, 31, 0);
+	BG_PALETTE[3] = RGB15(0, 0, 31);
 
 	// 16 colors for Entities
 	for(u32 i = 16; i < 32; i++) { 
-		myPal[i] = RGB15(i, i, i);
+		BG_PALETTE[i] = RGB15(i, i, i);
 	}
-	memcpy(BG_PALETTE, myPal, sizeof(myPal));
 
 	Entity dst;
 	dst.color = 1;
