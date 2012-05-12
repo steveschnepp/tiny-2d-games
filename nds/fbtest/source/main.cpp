@@ -10,6 +10,18 @@
 u16 myPal[256];
 u8  myBmp[192][256];
 
+u32 xor128(void) {
+  static u32 x = 123456789;
+  static u32 y = 362436069;
+  static u32 z = 521288629;
+  static u32 w = 88675123;
+  u32 t;
+ 
+  t = x ^ (x << 11);
+  x = y; y = z; z = w;
+  return w = w ^ (w >> 19) ^ (t ^ (t >> 8));
+}
+
 struct Entity {
 	Entity() : x(0), y(0), dx(0), dy(0), color(0) {}
 	f32 x, y;
@@ -89,10 +101,10 @@ int main(int argc, char *argv[]) {
 				e->x     = src.x;
 				e->y     = src.y;
 
-				e->dx     = (rand()%256 - 128) / 256.0f;
-				e->dy     = (rand()%256 - 128) / 256.0f;
+				e->dx     = (xor128()%256 - 128) / 256.0f;
+				e->dy     = (xor128()%256 - 128) / 256.0f;
 
-				e->color = rand()%16+16; // don't allow transparent
+				e->color = xor128()%16+16; // don't allow transparent
 				myEntities.push_back(e);
 			}
 		}
