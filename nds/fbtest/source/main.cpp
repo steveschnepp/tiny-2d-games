@@ -25,7 +25,7 @@ struct Entity {
 	Entity() : x(0), y(0), dx(0), dy(0), color(0) {}
 	f32 x, y;
 	f32 dx, dy;
-	int color;
+	u8 color;
 };
 
 const size_t NUM_ENTITIES = 4096 * 10;
@@ -44,6 +44,12 @@ template <class T> const T& normalize(const T& value, const T& min, const T& max
 	if (value < min) return min;
 	if (value > max) return max;
 	return value;
+}
+
+void drawPix(f32 fx, f32 fy, u8 color) {
+	int x = fx.getInt();
+	int y = fy.getInt();
+	if (x >= 0 && x < 256 && y >= 0 && y < 192) myBmp[y][x] = color;
 }
 
 int main(int argc, char *argv[]) {
@@ -120,16 +126,24 @@ int main(int argc, char *argv[]) {
 
 	touchPosition touch;
 	touchRead(&touch);
+      
+	dst.x = inttof32(touch.px);
+	dst.y = inttof32(touch.py);
 
-	if (down & KEY_DOWN) {
-              src.x = inttof32(touch.px);
-              src.y = inttof32(touch.py);
-        } else {
-  	      dst.x = inttof32(touch.px);
-              dst.y = inttof32(touch.py);
-        }
       }
 
+	if (down & KEY_DOWN) {
+              src.y += 1.0f;
+        }
+	if (down & KEY_UP) {
+              src.y -= 1.0f;
+        }
+	if (down & KEY_LEFT) {
+              src.x -= 1.0f;
+        }
+	if (down & KEY_RIGHT) {
+              src.x += 1.0f;
+        }
 
 	// move the entities
 	for(auto it = myEntities.begin(); it != myEntities.end(); it++) {
@@ -138,8 +152,10 @@ int main(int argc, char *argv[]) {
 
         f32 dist_2 = sqr(dst.x - e->x) + sqr(dst.y - e->y);
 	if ( dist_2 < 6.0f) {
-		e->dx = 0;
-		e->dy = 0;
+		// We just reached dst
+		it = myEntities.erase(it);
+		delete(e);
+		continue;
 	} else {
 		// Every particle wants to go @ dst
 		f32 ax = (dst.x - e->x) / dist_2;
@@ -154,8 +170,8 @@ int main(int argc, char *argv[]) {
       e->y += e->dy;
 
       // Loosing 0.1% velocity each frame
-      e->dx *= 0.999f; 
-      e->dy *= 0.999f;
+      e->dx *= 0.99f; 
+      e->dy *= 0.99f;
 
       // clamp
       if(e->x > 255.0f) {
@@ -176,11 +192,15 @@ int main(int argc, char *argv[]) {
       }
 
       // copy to buffer
-      myBmp[e->y.getInt()][e->x.getInt()] = e->color;
+	drawPix(e->x, e->y, e->color);
     }
 
-    myBmp[dst.y.getInt()][dst.x.getInt()] = dst.color;
-    myBmp[src.y.getInt()][src.x.getInt()] = src.color;
+    for (int i = -2; i <= 2; i++) {
+    	for (int j = -2; j <= 2; j++) {
+		drawPix(dst.x + inttof32(i), dst.y + inttof32(j), dst.color);
+		drawPix(src.x + inttof32(i), src.y + inttof32(j), src.color);
+	}
+    }
 
     int ticks_move = cpuGetTiming();
 
