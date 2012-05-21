@@ -18,6 +18,8 @@ public:
   s32 getValue() const { return v; }
   v10 tov10() const { return (v>>3)&0x3FF; }
   f32 const sqrt() const { return f32(sqrtf32(v)); }
+  f32 const sqr() const { return f32(mulf32(v, v)); }
+  f32 const abs() const { return (v >= 0) ? *this : f32(-v); }
 
   int getInt() const { return f32toint(v); }
 
@@ -40,5 +42,15 @@ public:
   const bool operator!=(const f32 &f) const { return v != f.v; }
 
 };
+
+// Helper functions that avoid OO-style
+f32 abs(f32 value) {
+        return value.abs();
+}
+
+f32 sqr(f32 value) {
+        return value.sqr();
+}
+
 
 #endif

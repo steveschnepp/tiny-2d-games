@@ -31,15 +31,6 @@ struct Entity {
 const size_t NUM_ENTITIES = 4096 * 10;
 std::list<Entity*> myEntities;
 
-f32 abs(f32 value) {
-	if (value < 0) return -value; 
-	return value; 
-}
-
-f32 sqr(f32 value) {
-	return value * value; 
-}
-
 template <class T> const T& normalize(const T& value, const T& min, const T& max) {
 	if (value < min) return min;
 	if (value > max) return max;
