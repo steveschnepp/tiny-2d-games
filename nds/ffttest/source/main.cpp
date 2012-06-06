@@ -86,10 +86,10 @@ int main(int argc, char *argv[]) {
 	// gradient colors
 	for(u32 i = 0; i < 128; i++) { 
 		// Negative values are red
-		BG_PALETTE[128-i] = RGB15(i/8, 0, 0);
+		BG_PALETTE[128-i] = RGB15(i/4, 0, 0);
 	}
-	for(u32 i = 128; i < 256; i++) { 
-		BG_PALETTE[i] = RGB15(i/8, i/8, i/8);
+	for(u32 i = 0; i < 128; i++) { 
+		BG_PALETTE[i+128] = RGB15(i/4, i/4, i/4);
 	}
 
 	// Starting recording
