@@ -149,7 +149,9 @@ int main(int argc, char *argv[]) {
 			const int buffer_size = 256;
 			short fft_buffer[buffer_size] = { 0 };
 			for (int i = 0; i < buffer_size; i ++) {
-				fft_buffer[i] = myBmp[y][i] * 4;
+				short current_sample = myBmp[y][i];
+				const short ampli_factor = 4;
+				fft_buffer[i] = current_sample * ampli_factor;
 			}
 			fix_fftr(fft_buffer, 8, inverse);
 			for (int i = 0; i < buffer_size; i ++) {
