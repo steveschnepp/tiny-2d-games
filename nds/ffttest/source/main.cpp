@@ -77,7 +77,7 @@ int main(int argc, char *argv[]) {
 	consoleDemoInit();
 
 	// initialize the backgrounds
-	int main = bgInit   (2, BgType_Bmp8, BgSize_B8_256x256, 0, 0);
+	int main = bgInit(2, BgType_Bmp8, BgSize_B8_256x256, 0, 0);
 
 	// clear the backgrounds
 	memset(bgGetGfxPtr(main), 0, 256*256);
@@ -85,7 +85,6 @@ int main(int argc, char *argv[]) {
 	// fill in the palette
 	// gradient colors
 	for(u32 i = 0; i < 256; i++) { 
-		BG_PALETTE[i] = RGB15((i/1) % 32, (i/4) % 32, (i/8) % 32);
 		BG_PALETTE[i] = RGB15(i/8, i/8, i/8);
 	}
 
