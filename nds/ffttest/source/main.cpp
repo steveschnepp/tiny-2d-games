@@ -84,7 +84,11 @@ int main(int argc, char *argv[]) {
 
 	// fill in the palette
 	// gradient colors
-	for(u32 i = 0; i < 256; i++) { 
+	for(u32 i = 0; i < 128; i++) { 
+		// Negative values are red
+		BG_PALETTE[128-i] = RGB15(i/8, 0, 0);
+	}
+	for(u32 i = 128; i < 256; i++) { 
 		BG_PALETTE[i] = RGB15(i/8, i/8, i/8);
 	}
 
