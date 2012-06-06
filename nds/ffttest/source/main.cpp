@@ -7,7 +7,7 @@
 #include "fixed.h"
 #include "fix_fft.h"
 
-u8  myBmp[192][256];
+char  myBmp[192][256];
 
 template <class T> const T& normalize(const T& value, const T& min, const T& max) {
 	if (value < min) return min;
@@ -42,6 +42,9 @@ u32 sound_buffer_size = 192*256;
 //buffer size large enough to hold two frames of 8bit mic data
 u32 mic_buffer_size = sample_rate / 30;
 
+
+static u32 frame = 0;
+
 //mic stream handler
 void micHandler(void* data, int length)
 {
@@ -61,7 +64,6 @@ void micHandler(void* data, int length)
 
 int main(int argc, char *argv[]) {
 	int down = 0;
-	static u32 frame = 0;
 
 	// We use the touch screen for graphical stuff
 	lcdMainOnBottom();
@@ -84,18 +86,20 @@ int main(int argc, char *argv[]) {
 
 	// fill in the palette
 	// gradient colors
-	for(u32 i = 0; i < 128; i++) { 
+	for(char i = -127; i < 0; i++) { 
 		// Negative values are red
-		BG_PALETTE[128-i] = RGB15(i/4, 0, 0);
+		u32 color_idx = (u8) i;
+		BG_PALETTE[color_idx] = RGB15(-i/4, 0, 0);
 	}
-	for(u32 i = 0; i < 128; i++) { 
-		BG_PALETTE[i+128] = RGB15(i/4, i/4, i/4);
+	for(char i = 0; i < 128; i++) { 
+		u32 color_idx = i;
+		BG_PALETTE[color_idx] = RGB15(i/4, i/4, i/4);
 	}
 
-	// We reserve ourselves the 4 lower colors for special purposes.
+	// We reserve ourselves the upper color for special purposes.
 	// --> Just overriding the negative colors (out of lazyness)
 	const u32 COLOR_BLACK = 0;
-	const u32 COLOR_CURSOR = 1;
+	const u32 COLOR_CURSOR = 127;
 	BG_PALETTE[COLOR_BLACK] = RGB15(0, 0, 0);
 	BG_PALETTE[COLOR_CURSOR] = RGB15(0, 31, 0);
 
@@ -132,18 +136,24 @@ int main(int argc, char *argv[]) {
 		u32 sound_offset = normalize<u32>(data_length - 256, 0, data_length);
 		
 		for (u32 x = 0; x < 256; x++) {
-			u8 current_sound_color = (u8) (sound_buffer[sound_offset+x] + 128);
-			myBmp[y][x] = current_sound_color;
+			myBmp[y][x] = sound_buffer[sound_offset+x];
 
 			// Show current cursor
-			myBmp[(y+1) % 192][x] = COLOR_CURSOR;
+			myBmp[(y+1) % 192][x] = (char) COLOR_CURSOR;
 		} 
 
 		if (down & KEY_TOUCH) {
 			const int inverse = 0;
-			char* offset = (char*) myBmp[y];
-			fix_fftr(offset, 8, inverse);
-
+			// FFT is done in 16bit using a temp array
+			const int buffer_size = 256;
+			short fft_buffer[buffer_size] = { 0 };
+			for (int i = 0; i < buffer_size; i ++) {
+				fft_buffer[i] = myBmp[y][i];
+			}
+			fix_fftr(fft_buffer, 8, inverse);
+			for (int i = 0; i < buffer_size; i ++) {
+				myBmp[y][i] = fft_buffer[i];
+			}
 		}
 
 		int ticks_move = cpuGetTiming();
@@ -162,6 +172,7 @@ int main(int argc, char *argv[]) {
 			printf("cpu: %.0f%%\n", cpu_usage / 1.92f);
 			printf("ticks: %d/%d (%.0f)\n", ticks_move, ticks_done, (100.0f * ticks_move / ticks_done));
 			printf("data_length: %d\n", data_length);
+			printf("size_of: char %d\n", sizeof(char));
 		}	
 
 		// copy from buffer to vram
