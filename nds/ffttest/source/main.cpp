@@ -135,8 +135,9 @@ int main(int argc, char *argv[]) {
 		u32 y = frame % 192;
 		u32 sound_offset = normalize<u32>(data_length - 256, 0, data_length);
 		
+		const int magnify = 5;
 		for (u32 x = 0; x < 256; x++) {
-			myBmp[y][x] = sound_buffer[sound_offset+x];
+			myBmp[y][x] = sound_buffer[sound_offset+x] * magnify;
 
 			// Show current cursor
 			myBmp[(y+1) % 192][x] = (char) COLOR_CURSOR;
@@ -148,12 +149,15 @@ int main(int argc, char *argv[]) {
 			const int buffer_size = 256;
 			short fft_buffer[buffer_size] = { 0 };
 			for (int i = 0; i < buffer_size; i ++) {
-				fft_buffer[i] = myBmp[y][i];
+				fft_buffer[i] = myBmp[y][i] * 4;
 			}
 			fix_fftr(fft_buffer, 8, inverse);
 			for (int i = 0; i < buffer_size; i ++) {
 				myBmp[y][i] = fft_buffer[i];
 			}
+			BG_PALETTE[COLOR_CURSOR] = RGB15(0, 0, 31);
+		} else {
+			BG_PALETTE[COLOR_CURSOR] = RGB15(0, 31, 0);
 		}
 
 		int ticks_move = cpuGetTiming();
