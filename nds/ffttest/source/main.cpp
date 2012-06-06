@@ -92,6 +92,13 @@ int main(int argc, char *argv[]) {
 		BG_PALETTE[i+128] = RGB15(i/4, i/4, i/4);
 	}
 
+	// We reserve ourselves the 4 lower colors for special purposes.
+	// --> Just overriding the negative colors (out of lazyness)
+	const u32 COLOR_BLACK = 0;
+	const u32 COLOR_CURSOR = 1;
+	BG_PALETTE[COLOR_BLACK] = RGB15(0, 0, 0);
+	BG_PALETTE[COLOR_CURSOR] = RGB15(0, 31, 0);
+
 	// Starting recording
 	sound_buffer = (char*)malloc(sound_buffer_size);
 	mic_buffer = (char*)malloc(mic_buffer_size);
@@ -129,7 +136,7 @@ int main(int argc, char *argv[]) {
 			myBmp[y][x] = current_sound_color;
 
 			// Show current cursor
-			myBmp[(y+1) % 192][x] = 128;
+			myBmp[(y+1) % 192][x] = COLOR_CURSOR;
 		} 
 
 		if (down & KEY_TOUCH) {
