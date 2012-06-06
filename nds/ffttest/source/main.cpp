@@ -173,7 +173,7 @@ int main(int argc, char *argv[]) {
 		// Print debug info
 		{ 
 			consoleClear(); 
-			printf("cpu: %.0f%%\n", cpu_usage / 1.92f);
+			printf("cpu: %.0f%%\n", (cpu_usage+70) / 2.56f);
 			printf("ticks: %d/%d (%.0f)\n", ticks_move, ticks_done, (100.0f * ticks_move / ticks_done));
 			printf("data_length: %d\n", data_length);
 			printf("size_of: char %d\n", sizeof(char));
