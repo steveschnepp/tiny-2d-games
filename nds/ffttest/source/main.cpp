@@ -25,10 +25,10 @@ void drawPix(f32 fx, f32 fy, u8 color) {
 #define sample_rate  8000
 
 //buffer to hold sound data for playback
-u8* sound_buffer = 0;
+char* sound_buffer = 0;
 
 //buffer which is written to by the arm7
-u8* mic_buffer = 0;
+char* mic_buffer = 0;
 
 //the length of the current data
 u32 data_length = 0;
@@ -89,8 +89,8 @@ int main(int argc, char *argv[]) {
 	}
 
 	// Starting recording
-	sound_buffer = (u8*)malloc(sound_buffer_size);
-	mic_buffer = (u8*)malloc(mic_buffer_size);
+	sound_buffer = (char*)malloc(sound_buffer_size);
+	mic_buffer = (char*)malloc(mic_buffer_size);
 			
 	// Record
 	soundMicRecord(mic_buffer, mic_buffer_size, MicFormat_8Bit, sample_rate, micHandler);
@@ -121,7 +121,8 @@ int main(int argc, char *argv[]) {
 		u32 sound_offset = normalize<u32>(data_length - 256, 0, data_length);
 		
 		for (u32 x = 0; x < 256; x++) {
-			myBmp[y][x] = sound_buffer[sound_offset+x];
+			u8 current_sound_color = (u8) (sound_buffer[sound_offset+x] + 128);
+			myBmp[y][x] = current_sound_color;
 
 			// Show current cursor
 			myBmp[(y+1) % 192][x] = 128;
