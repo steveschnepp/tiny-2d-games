@@ -74,6 +74,8 @@ int main(int argc, char *argv[]) {
 	// set up VRAM banks
 	vramSetBankA(VRAM_A_MAIN_BG);
 	vramSetBankB(VRAM_B_MAIN_SPRITE);
+	vramSetBankC(VRAM_C_SUB_BG);
+	vramSetBankD(VRAM_D_SUB_SPRITE);
 
 	// Set up console
 	videoSetModeSub(MODE_5_2D);
