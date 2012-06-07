@@ -7,7 +7,8 @@
 #include "fixed.h"
 #include "fix_fft.h"
 
-char  myBmp[192][256];
+char pcm[192][256];
+char fft[192][256];
 
 template <class T> const T& normalize(const T& value, const T& min, const T& max) {
 	if (value < min) return min;
@@ -15,10 +16,10 @@ template <class T> const T& normalize(const T& value, const T& min, const T& max
 	return value;
 }
 
-void drawPix(f32 fx, f32 fy, u8 color) {
+void drawPix(char buf[192][256], f32 fx, f32 fy, u8 color) {
 	int x = fx.getInt();
 	int y = fy.getInt();
-	if (x >= 0 && x < 256 && y >= 0 && y < 192) myBmp[y][x] = color;
+	if (x >= 0 && x < 256 && y >= 0 && y < 192) buf[y][x] = color;
 }
 
 //the record sample rate
@@ -73,16 +74,22 @@ int main(int argc, char *argv[]) {
 	// set up VRAM banks
 	vramSetBankA(VRAM_A_MAIN_BG);
 	vramSetBankB(VRAM_B_MAIN_SPRITE);
+	vramSetBankC(VRAM_C_SUB_BG);
+	vramSetBankD(VRAM_D_SUB_SPRITE);
 
 	// Set up console
-	videoSetModeSub(MODE_0_2D);
-	consoleDemoInit();
+	videoSetModeSub(MODE_5_2D);
+	consoleInit(NULL, 0, BgType_Text4bpp, BgSize_T_256x256, 2, 0, false, true);
+	memset(BG_PALETTE_SUB, 0, 512);
+	BG_PALETTE_SUB[255] = RGB15(31, 31, 31);
 
 	// initialize the backgrounds
-	int main = bgInit(2, BgType_Bmp8, BgSize_B8_256x256, 0, 0);
+	int main = bgInit   (2, BgType_Bmp8, BgSize_B8_256x256, 0, 0);
+	int sub  = bgInitSub(2, BgType_Bmp8, BgSize_B8_256x256, 1, 0);
 
 	// clear the backgrounds
 	memset(bgGetGfxPtr(main), 0, 256*256);
+	memset(bgGetGfxPtr(sub),  0, 256*256);
 
 	// fill in the palette
 	// gradient colors
@@ -90,22 +97,26 @@ int main(int argc, char *argv[]) {
 		// Negative values are red
 		u32 color_idx = (u8) i;
 		BG_PALETTE[color_idx] = RGB15(-i/4, 0, 0);
+		BG_PALETTE_SUB[color_idx] = RGB15(-i/4, 0, 0);
 	}
 	for(char i = 0; i < 128; i++) { 
 		u32 color_idx = i;
 		BG_PALETTE[color_idx] = RGB15(i/4, i/4, i/4);
+		BG_PALETTE_SUB[color_idx] = RGB15(i/4, i/4, i/4);
 	}
 
 	// We reserve ourselves the upper color for special purposes.
 	// --> Just overriding the negative colors (out of lazyness)
-	const u32 COLOR_BLACK = 0;
+	const u32 COLOR_BLACK  = 0;
 	const u32 COLOR_CURSOR = 127;
-	BG_PALETTE[COLOR_BLACK] = RGB15(0, 0, 0);
-	BG_PALETTE[COLOR_CURSOR] = RGB15(0, 31, 0);
+	BG_PALETTE[COLOR_BLACK]      = RGB15(0,  0,  0);
+	BG_PALETTE[COLOR_CURSOR]     = RGB15(0,  0, 31);
+	BG_PALETTE_SUB[COLOR_BLACK]  = RGB15(0,  0,  0);
+	BG_PALETTE_SUB[COLOR_CURSOR] = RGB15(0, 31,  0);
 
 	// Starting recording
 	sound_buffer = (char*)malloc(sound_buffer_size);
-	mic_buffer = (char*)malloc(mic_buffer_size);
+	mic_buffer   = (char*)malloc(mic_buffer_size);
 			
 	// Record
 	soundMicRecord(mic_buffer, mic_buffer_size, MicFormat_8Bit, sample_rate, micHandler);
@@ -136,31 +147,27 @@ int main(int argc, char *argv[]) {
 		u32 sound_offset = normalize<u32>(data_length - 256, 0, data_length);
 		
 		const int magnify = 5;
-		for (u32 x = 0; x < 256; x++) {
-			myBmp[y][x] = sound_buffer[sound_offset+x] * magnify;
+		// fill in the pcm buffer
+		for (u32 x = 0; x < 256; x++)
+			pcm[y][x] = sound_buffer[sound_offset+x] * magnify;
 
-			// Show current cursor
-			myBmp[(y+1) % 192][x] = (char) COLOR_CURSOR;
-		} 
-
-		if (down & KEY_TOUCH) {
-			const int inverse = 0;
-			// FFT is done in 16bit using a temp array
-			const int buffer_size = 256;
-			short fft_buffer[buffer_size] = { 0 };
-			for (int i = 0; i < buffer_size; i ++) {
-				short current_sample = myBmp[y][i];
-				const short ampli_factor = 4;
-				fft_buffer[i] = current_sample * ampli_factor;
-			}
-			fix_fftr(fft_buffer, 8, inverse);
-			for (int i = 0; i < buffer_size; i ++) {
-				myBmp[y][i] = fft_buffer[i];
-			}
-			BG_PALETTE[COLOR_CURSOR] = RGB15(0, 0, 31);
-		} else {
-			BG_PALETTE[COLOR_CURSOR] = RGB15(0, 31, 0);
+		const int inverse = 0;
+		// FFT is done in 16bit using a temp array
+		const int buffer_size = 256;
+		short fft_buffer[buffer_size];
+		for (int i = 0; i < buffer_size; i ++) {
+			short current_sample = pcm[y][i];
+			const short ampli_factor = 4;
+			fft_buffer[i] = current_sample * ampli_factor;
 		}
+		fix_fftr(fft_buffer, 8, inverse);
+		for (int i = 0; i < buffer_size; i ++) {
+			fft[y][i] = fft_buffer[i];
+		}
+
+		// Show current cursor
+		memset(pcm[(y+1)%192], COLOR_CURSOR, 256);
+		memset(fft[(y+1)%192], COLOR_CURSOR, 256);
 
 		int ticks_move = cpuGetTiming();
 
@@ -182,7 +189,8 @@ int main(int argc, char *argv[]) {
 		}	
 
 		// copy from buffer to vram
-		memcpy(bgGetGfxPtr(main), myBmp, sizeof(myBmp));
+		memcpy(bgGetGfxPtr(main), pcm, sizeof(pcm));
+		memcpy(bgGetGfxPtr(sub),  fft, sizeof(fft));
 	  } while(true);
 
   return 0;
