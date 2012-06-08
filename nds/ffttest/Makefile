@@ -30,9 +30,9 @@ GRAPHICS	:=	gfx
 #---------------------------------------------------------------------------------
 # options for code generation
 #---------------------------------------------------------------------------------
-ARCH		:=	-mthumb -mthumb-interwork
+ARCH		:=	-marm -mthumb-interwork
 
-CFLAGS	:=	-g -Wall -O2 -std=c++11\
+CFLAGS	:=	-g -Wall -O2 -std=gnu++11\
  			-march=armv5te -mtune=arm946e-s -fomit-frame-pointer\
 			-ffast-math \
 			$(ARCH)
