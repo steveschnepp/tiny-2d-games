@@ -96,8 +96,8 @@ int main(int argc, char *argv[]) {
 				e->x     = src.x;
 				e->y     = src.y;
 
-				e->dx     = (xor128()%256 - 128) / 256.0f;
-				e->dy     = (xor128()%256 - 128) / 256.0f;
+				e->dx     = f32((s32)inttof32((xor128()%256 - 128))) / 256.0f;
+				e->dy     = f32((s32)inttof32((xor128()%256 - 128))) / 256.0f;
 
 				e->color = xor128()%16+16; // don't allow transparent
 				myEntities.push_back(e);
@@ -206,9 +206,9 @@ int main(int argc, char *argv[]) {
     // Print debug info
     { 
 	consoleClear(); 
-	printf("nb: %d\n", myEntities.size());
-	printf("cpu: %.0f%%\n", cpu_usage / 1.92f);
-	printf("ticks: %d/%d (%.0f)\n", ticks_move, ticks_done, (100.0f * ticks_move / ticks_done));
+	iprintf("nb: %d\n", myEntities.size());
+	iprintf("cpu: %u%%\n", cpu_usage*100/ 192);
+	iprintf("ticks: %d/%d (%u)\n", ticks_move, ticks_done, (100 * ticks_move / ticks_done));
     }
 
     // copy to vram
