@@ -1,310 +1,166 @@
 // Drawing on DS is easy... This'll show you to what point !
 // Copyright 2008-2009 Steve Schnepp <steve.schnepp@pwkf.org>
 
-// Includes
 #include <nds.h>
 #include <stdio.h>
 #include <stdlib.h>
-
-#include <ext/slist>
-#include <list>
 #include <vector>
 
-#include "nds_utils.h"
+u32 gravity = 1;
+u32 escape_velocity = 640;
+u32 nb_particles_per_frame = 128;
 
-int gravity = 1;
-int escape_velocity = 640;
-int nb_particles_per_frame = 128;
-
-static uint16* front = VRAM_A;
-static uint16* back = VRAM_B;
-void flip_vram()
-{
-	if (front == VRAM_A) {
-		front = VRAM_B;
-		back = VRAM_A;
-		videoSetMode(MODE_FB1);			
-	} else {
-		front = VRAM_A;
-		back = VRAM_B;
-		videoSetMode(MODE_FB0);			
-	}
-}
-
+static u8 fb[SCREEN_WIDTH*SCREEN_HEIGHT];
 
 struct Particle {
-	int x;
-	int y;
-	int dx;
-	int dy;
-	bool is_offscreen;
-	const unsigned short int color;
+  s32 x;
+  s32 y;
+  s32 dx;
+  s32 dy;
+  bool is_offscreen;
+  const u8 color;
 
-	Particle(int initial_x, int initial_y, unsigned short int initial_color) 
-		: is_offscreen(false), color(initial_color)
-	{
-		setX(initial_x);
-		setY(initial_y);
-		
-		int initial_velocity = (rand() % escape_velocity) - escape_velocity / 2; 
-		short initial_angle = (rand() % 0xFFFF); 
+  Particle(u32 initial_x, u32 initial_y, u8 initial_color) 
+    : is_offscreen(false), color(initial_color)
+  {
+    s32 initial_velocity = (rand() % escape_velocity) - escape_velocity / 2; 
+    s16 initial_angle    = (rand() % 0xFFFF);
+    setX(initial_x);
+    setY(initial_y);
 
-		dx = (initial_velocity * sinLerp(initial_angle)) >> 12;
-		dy = (initial_velocity * cosLerp(initial_angle)) >> 12;
-	}
+    dx = (initial_velocity * sinLerp(initial_angle)) >> 12;
+    dy = (initial_velocity * cosLerp(initial_angle)) >> 12;
+  }
 
-	int getX() {
-		return x >> 8;
-	}
-	int getY() {
-		return y >> 8;
-	}
-	void setX(int new_x) {
-		x = new_x << 8;
-	}
-	void setY(int new_y) {
-		y = new_y << 8;
-	}
+  s32 getX()           { return x >> 8;  }
+  s32 getY()           { return y >> 8;  }
+  void setX(s32 new_x) { x = new_x << 8; }
+  void setY(s32 new_y) { y = new_y << 8; }
 
-	void move() {
-		if (is_offscreen) return;
-		// Gravity
-		dy += gravity;
+  void move() {
+    if (is_offscreen)
+      return;
+    dy += gravity;
 
-		x += dx;
-		y += dy;
+    x += dx;
+    y += dy;
 
-		if (getX()<0) {
-			setX(0);
-			dx = -dx;
-		}
-		if (getX() > SCREEN_WIDTH - 1) {
-			setX(SCREEN_WIDTH - 1);
-			dx = -dx;
-		}
-		if (getY()<0) {
-			setY(0);
-			dy = -dy;
-		}
-		if (getY() > SCREEN_HEIGHT - 1) {
-			setY(SCREEN_HEIGHT - 1);
+    if (getX()<0) {
+      setX(0);
+      dx = -dx;
+    }
+    if (getX() > SCREEN_WIDTH - 1) {
+      setX(SCREEN_WIDTH - 1);
+      dx = -dx;
+    }
+    if (getY()<0) {
+      setY(0);
+      dy = -dy;
+    }
+    if (getY() > SCREEN_HEIGHT - 1) {
+      setY(SCREEN_HEIGHT - 1);
+      is_offscreen = true;
+    }
+  }
 
-			is_offscreen = true;
-		}
-	}
-
-	void Put8bitPixel(int screen_x, int screen_y, unsigned short int color) {
-		back[screen_x + screen_y * SCREEN_WIDTH] = color;
-	}
-
-	void hide() {
-		Put8bitPixel(getX(), getY(), RGB15(0,0,0));
-	}
-	void show() {
-		if (is_offscreen) return;
-		Put8bitPixel(getX(), getY(), color);
-	}
+  void show() {
+    if (!is_offscreen)
+      fb[getX() + getY() * SCREEN_WIDTH] = color;
+  }
 };
 
-//typedef __gnu_cxx::slist<Particle*> particles_list;
-//typedef std::list<Particle*> particles_list;
 typedef std::vector<Particle*> particles_list;
-
 particles_list particles;
 
-void initVideo() {
-    /*
-     *  Map VRAM to display a background on the main and sub screens.
-     * 
-     *  The vramSetMainBanks function takes four arguments, one for each of the
-     *  major VRAM banks. We can use it as shorthand for assigning values to
-     *  each of the VRAM bank's control registers.
-     *
-     *  We map banks A and B to main screen background memory. This gives us
-     *  256KB, which is a healthy amount for 16-bit graphics.
-     *
-     *  We map bank C to sub screen background memory.
-     *
-     *  We map bank D to LCD. This setting is generally used for when we aren't
-     *  using a particular bank.
-     */
-    /*vramSetMainBanks(VRAM_A_MAIN_BG_0x06000000,
-                     VRAM_B_MAIN_BG_0x06020000,
-                     VRAM_C_SUB_BG_0x06200000,
-                     VRAM_D_LCD);
-	*/
-    vramSetPrimaryBanks(VRAM_A_LCD, VRAM_B_LCD, VRAM_C_SUB_BG, VRAM_D_SUB_SPRITE);							
+static inline void initVideo() {
+  vramSetPrimaryBanks(VRAM_A_MAIN_BG,
+                      VRAM_B_MAIN_SPRITE,
+                      VRAM_C_SUB_BG,
+                      VRAM_D_SUB_SPRITE);
 
-	//set main display to render directly from the frame buffer
-	videoSetMode(MODE_FB0);
-	
-    // /*  Set the video mode on the main screen. */
-    /* videoSetMode(MODE_5_2D | // Set the graphics mode to Mode 5
-                 DISPLAY_BG2_ACTIVE | // Enable BG2 for display
-                 DISPLAY_BG3_ACTIVE); //Enable BG3 for display
-*/
-    /*  Set the video mode on the sub screen. */
-    videoSetModeSub(MODE_5_2D | // Set the graphics mode to Mode 5
-                    DISPLAY_BG3_ACTIVE); // Enable BG3 for display
+  videoSetMode(MODE_5_2D);
+  videoSetModeSub(MODE_5_2D);
 }
 
-void initBackgrounds() {
-    /*  Set up affine background 3 on main as a 16-bit color background. */
-    REG_BG3CNT = BG_BMP16_256x256 |
-                 BG_BMP_BASE(0) | // The starting place in memory
-                 BG_PRIORITY(3); // A low priority
+static inline void initBackgrounds() {
+    bgInit(2, BgType_Bmp8, BgSize_B8_128x128, 8, 0);
+    bgInit(3, BgType_Bmp8, BgSize_B8_256x256, 0, 0);
+    for(u32 i = 1; i < 256; i++) {
+      u32 r = rand();
+      BG_PALETTE[i] = RGB15((r&0xF00) >> 6, (r&0xF0) >> 2, (r&0xF) << 2);
+    }
 
-    /*  Set the affine transformation matrix for the main screen background 3
-     *  to be the identity matrix.
-     */
-    REG_BG3PA = 1 << 8;
-    REG_BG3PB = 0;
-    REG_BG3PC = 0;
-    REG_BG3PD = 1 << 8;
-
-    /*  Place main screen background 3 at the origin (upper left of the
-     *  screen).
-     */
-    REG_BG3X = 0;
-    REG_BG3Y = 0;
-
-    /*  Set up affine background 2 on main as a 16-bit color background. */
-    REG_BG2CNT = BG_BMP16_128x128 |
-                 BG_BMP_BASE(8) | // The starting place in memory
-                 BG_PRIORITY(2);  // A higher priority
-
-    /*  Set the affine transformation matrix for the main screen background 3
-     *  to be the identity matrix.
-     */
-    REG_BG2PA = 1 << 8;
-    REG_BG2PB = 0;
-    REG_BG2PC = 0;
-    REG_BG2PD = 1 << 8;
-
-    /*  Place main screen background 2 in an interesting place. */
-    REG_BG2X = -(SCREEN_WIDTH / 2 - 32) << 8;
-    REG_BG2Y = -32 << 8;
-
-    /*  Set up affine background 3 on the sub screen as a 16-bit color
-     *  background.
-     */
-    REG_BG3CNT_SUB = BG_BMP16_256x256 |
-                     BG_BMP_BASE(0) | // The starting place in memory
-                     BG_PRIORITY(3); // A low priority
-
-    /*  Set the affine transformation matrix for the sub screen background 3
-     *  to be the identity matrix.
-     */
-    REG_BG3PA_SUB = 1 << 8;
-    REG_BG3PB_SUB = 0;
-    REG_BG3PC_SUB = 0;
-    REG_BG3PD_SUB = 1 << 8;
-
-    /*
-     *  Place main screen background 3 at the origin (upper left of the screen)
-     */
-    REG_BG3X_SUB = 0;
-    REG_BG3Y_SUB = 0;
+    bgInitSub(3, BgType_Bmp16, BgSize_B16_256x256, 0, 0);
+    consoleDemoInit();
 }
 
-// Function: main()
 int main(int argc, char *argv[]) {
-	/*  Turn on the 2D graphics core. */
-    powerOn(POWER_ALL_2D);
- 
-	 /*  Configure the VRAM and background control registers. */
-    lcdMainOnBottom(); // Place the main screen on the bottom physical screen
-    initVideo(); 
-     initBackgrounds(); 
-	
-	consoleDemoInit();
-	// BG_PALETTE_SUB[255] = RGB15(31,31,31);	//by default font will be rendered with color 255
-	
-	// Infinite loop to keep the program running
-	while (1) {
-		static volatile int frame = 0;
-		frame++;
-		
-		static touchPosition touch;
-		touchRead(&touch);
-		
-		scanKeys();
-		int held = keysHeld();
+  u32 frame = 0;
+  u32 held  = 0;
+  touchPosition touch;
 
-		// checkReset(held);
+  lcdMainOnBottom();
+  initVideo(); 
+  initBackgrounds(); 
+  
+  while (1) {
+    swiWaitForVBlank();
+    memcpy(bgGetGfxPtr(3), fb, SCREEN_WIDTH*SCREEN_HEIGHT);
+    iprintf("\x1b[0;0H");
+    iprintf("Frame:     %5d\n", frame);
+    iprintf("Particles: %5d\n", particles.size());
+    iprintf("Gravity:   %5d\n", gravity);
+    iprintf("Esc. Vel.: %5d\n", escape_velocity);
+    iprintf("PPF:       %5d\n", nb_particles_per_frame);
+    frame++;
 
-		frame ++;
-		if (held & KEY_UP) {
-			gravity ++;
-		} else if (held & KEY_DOWN) {
-			gravity --;
-			if (gravity < 0) gravity = 0;
-		}
-		
-		if (held & KEY_RIGHT) {
-			escape_velocity ++;
-		} else if (held & KEY_LEFT) {
-			escape_velocity --;
-			if (escape_velocity < 0) escape_velocity = 0;
-		}
-		
-		if (held & KEY_A) {
-			nb_particles_per_frame ++;
-		} else if (held & KEY_B) {
-			nb_particles_per_frame --;
-			if (nb_particles_per_frame < 1) nb_particles_per_frame = 1;
-		}
+    memset(fb, 0, SCREEN_WIDTH*SCREEN_HEIGHT);
+    
+    scanKeys();
+    held = keysHeld();
 
-		if (held & KEY_TOUCH) {
-			int random_int = rand();
-			uint8 r_comp = (random_int & 0x0F00) >> 8;
-			uint8 g_comp = (random_int & 0x00F0) >> 4;
-			uint8 b_comp = (random_int & 0x000F) >> 0;
-			uint16 color = RGB15(r_comp, g_comp, b_comp) | (1 << 15);
+    if (held & KEY_UP)
+      gravity++;
+    else if (held & KEY_DOWN && gravity > 0)
+      gravity--;
+    
+    if (held & KEY_RIGHT)
+      escape_velocity++;
+    else if (held & KEY_LEFT && escape_velocity > 0)
+      escape_velocity--;
+    
+    if (held & KEY_A)
+      nb_particles_per_frame++;
+    else if (held & KEY_B && nb_particles_per_frame > 1)
+      nb_particles_per_frame--;
 
-			// Add nb_particles_per_frame particle
-			for (int i = 0; i < nb_particles_per_frame; i++) {
-				Particle* particle = new Particle(touch.px, touch.py, color);
-				// particles.push_front(particle);
-				particles.push_back(particle);
-			}
-		}
+    if (held & KEY_TOUCH) {
+      touchRead(&touch);
 
-		// Moves every Particle
-		particles_list::iterator i_old;
-		for(particles_list::iterator i = particles.begin(); i != particles.end(); ++i) {
-			Particle* particle = *i;
-			particle->move();
-			if (particle->is_offscreen) {
-				if (i == particles.begin()) {
-					i = particles.erase(i);
-				} else {
-					//i = particles.erase_after(i_old);
-					i = particles.erase(i);
-				}
-				delete (particle);
-			} 
-			//i_old = i;
-		}
-		
-		// Draws every Particle on the back screen
-		for(particles_list::iterator i = particles.begin(); i != particles.end(); ++i) {
-			Particle* particle = *i;
-			particle->show();
-		}
+      for (u32 i = 0; i < nb_particles_per_frame; i++) {
+        Particle* particle = new Particle(touch.px, touch.py, rand()%255+1);
+        particles.push_back(particle);
+      }
+    }
 
+    for(particles_list::iterator i = particles.begin(); i != particles.end(); ++i) {
+      Particle* particle = *i;
+      particle->move();
+      if (particle->is_offscreen) {
+        i = particles.erase(i);
+        delete (particle);
+        if(i == particles.end())
+          break;
+      } 
+    }
+    
+    // Draws every Particle on the back screen
+    for(particles_list::iterator i = particles.begin(); i != particles.end(); ++i) {
+      Particle* particle = *i;
+      particle->show();
+    }
+  }
+  
+  return 0;
+}
 
-		// flip screens
-		flip_vram();
-
-		// erase back screen
-		uint16 col = RGB15(0, 0, 0) | BIT(15);
-		uint32 colcol = col | col << 16;
-		swiFastCopy(&colcol, back, 192*256*2/4 | COPY_MODE_FILL);
-		
-		PA_CheckLid();
-		swiWaitForVBlank();
-	}
-	
-	return 0;
-} // End of main()
