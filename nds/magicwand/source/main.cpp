@@ -4,7 +4,8 @@
 #include <nds.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <vector>
+#include <new>
+#include "bitmap.h"
 
 u32 gravity = 1;
 u32 escape_velocity = 640;
@@ -20,10 +21,12 @@ struct Particle {
 	bool is_offscreen;
 	const u8 color;
 
-	Particle(u32 initial_x, u32 initial_y, u8 initial_color) 
+	Particle() : x(0), y(0), dx(0), dy(0), is_offscreen(false), color(0) {}
+
+	Particle(u32 initial_x, u32 initial_y, u8 initial_color)
 		: is_offscreen(false), color(initial_color)
 	{
-		s32 initial_velocity = (rand() % escape_velocity) - escape_velocity / 2; 
+		s32 initial_velocity = (rand() % escape_velocity) - escape_velocity / 2;
 		s16 initial_angle    = (rand() % 0xFFFF);
 		setX(initial_x);
 		setY(initial_y);
@@ -69,9 +72,6 @@ struct Particle {
 	}
 };
 
-typedef std::vector<Particle*> particles_list;
-particles_list particles;
-
 static inline void initVideo() {
 	vramSetPrimaryBanks(VRAM_A_MAIN_BG,
 	                    VRAM_B_MAIN_SPRITE,
@@ -92,21 +92,27 @@ static inline void initBackgrounds() {
 	consoleDemoInit();
 }
 
+#define LIMIT 10240
+static u32 bitmap[LIMIT/32] ALIGN(32);
+static Particle particles[LIMIT] ALIGN(32);
+
 int main(int argc, char *argv[]) {
 	u32 frame = 0;
 	u32 held  = 0;
 	touchPosition touch;
 
 	lcdMainOnBottom();
-	initVideo(); 
-	initBackgrounds(); 
+	initVideo();
+	initBackgrounds();
+
+	memset(bitmap, 0, sizeof(bitmap));
 
 	while (1) {
 		swiWaitForVBlank();
 		memcpy(bgGetGfxPtr(3), fb, SCREEN_WIDTH*SCREEN_HEIGHT);
 		iprintf("\x1b[0;0H");
 		iprintf("Frame:     %5d\n", frame);
-		iprintf("Particles: %5d\n", particles.size());
+		iprintf("Particles: %5d\n", numSet(bitmap, LIMIT));
 		iprintf("Gravity:   %5d\n", gravity);
 		iprintf("Esc. Vel.: %5d\n", escape_velocity);
 		iprintf("PPF:       %5d\n", nb_particles_per_frame);
@@ -136,26 +142,23 @@ int main(int argc, char *argv[]) {
 			touchRead(&touch);
 
 			for (u32 i = 0; i < nb_particles_per_frame; i++) {
-				Particle* particle = new Particle(touch.px, touch.py, rand()%255+1);
-				particles.push_back(particle);
+				u32 bit = findClearBit(bitmap, LIMIT);
+				if(bit != LIMIT) {
+					new (&particles[bit]) Particle(touch.px, touch.py, rand()%255+1);
+					setBit(bitmap, bit);
+				}
 			}
 		}
 
-		for(particles_list::iterator i = particles.begin(); i != particles.end(); ++i) {
-			Particle* particle = *i;
-			particle->move();
-			if (particle->is_offscreen) {
-				i = particles.erase(i);
-				delete (particle);
-				if(i == particles.end())
-					break;
-			} 
-		}
-
-		// Draws every Particle on the back screen
-		for(particles_list::iterator i = particles.begin(); i != particles.end(); ++i) {
-			Particle* particle = *i;
-			particle->show();
+		for(u32 i = findSetBit(bitmap, LIMIT); i < LIMIT; i++) {
+			if(getBit(bitmap, i)) {
+				Particle *p = &particles[i];
+				p->move();
+				if (p->is_offscreen)
+					clearBit(bitmap, i);
+				else
+					p->show();
+			}
 		}
 	}
 
