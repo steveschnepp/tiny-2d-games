@@ -29,18 +29,35 @@ Upgrades increase rate.
 
 ## shotgun
 
-This is not a particle gun. Hitting is instant (ray casting). Sends many shots in wide spread. Each shot is small, but their sum is deadly.
-
+This is not a particle gun. Hitting is instant (ray casting).
+Sends many shots in wide spread. Each shot is small, but their sum is deadly.
 
 ## machine gun
 
+Another non particle gun. Same small shots, but very fast rate.
+Long rifles decrease accuracy. 
+Accuracy is perfect for the first shot when still.
+
+Upgrade increase accuracy.
 
 ## rpg
 
+Slow moving particle. Splash damage when hit. Very low firing rate.
+
+Upgrade increase rate.
+
 ## bomb
+
+Same as rpg, but stops at destination, and explodes after a while.
+Ultra low firing rate.
+
+Upgrade increse rate.
+
 # Graphics
 
-Each item is one colored pixel.
+Each item is one colored pixel. Plasma and explosions are done via pixel sized particle effects.
+
+Cyclings palettes could be used to make plasma and explosion glowy.
 
 # Game mechanics
 
