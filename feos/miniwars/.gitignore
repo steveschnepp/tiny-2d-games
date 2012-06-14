@@ -1,0 +1,7 @@
+build/
+gfx/*.h
+gfx/*.s
+*.elf
+*.elf.dbg
+*.fx2
+*.nds

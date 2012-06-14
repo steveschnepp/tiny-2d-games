@@ -1,0 +1,9 @@
+# include graphics
+-g -gt -gB4
+
+# include palette
+-p
+
+#exclude map
+-m! -mR!
+
