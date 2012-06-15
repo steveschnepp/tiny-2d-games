@@ -9,6 +9,7 @@
 #include "plasma.h"
 #include "shotgun.h"
 #include "mortar.h"
+#include "console.h"
 #include "font.h"
 #include "list.h"
 
@@ -37,15 +38,6 @@ static const u16 pal[256] = {
   RGB15(31, 31,  0), // particle color
 };
 
-// print to a "console" bg
-void print(const char *msg, int x, int y, int bg, int pal) {
-  int len = strlen(msg);
-  u16 *map = bgGetMapPtr(bg);
-
-  for(int i = 0; i < len; i++)
-    map[y*32+x+i] = (msg[i]-32) | (pal<<12);
-}
-
 int main() {
   int    down, held;       // button states
   int    frame   = 0;      // frame counter
@@ -53,6 +45,7 @@ int main() {
   Weapon weapon  = PLASMA; // weapon type
   touchPosition stylus;    // touch coordinates
   list<Particle*> *pList;  // particle list
+  Console *console;        // text console
   struct {
     s32 x;
     s32 y;
@@ -92,15 +85,16 @@ int main() {
 
   // initialize the framebuffered background
   bgInit(3, BgType_Bmp8, BgSize_B8_256x256, 0, 0);
-  // initialize the console background
-  bgInitSub(0, BgType_Text4bpp, BgSize_T_256x256, 2, 0);
 
   // initialize the main bg palette
   memcpy(BG_PALETTE, pal, sizeof(pal));
 
+  // initialize the console background
+  console = new Console(0, false, 2, 0);
+
   // initialize the console bg graphics and palette
-  memcpy(bgGetGfxPtr(4), fontTiles, fontTilesLen);
-  memcpy(BG_PALETTE_SUB, fontPal,   fontPalLen);
+  memcpy(bgGetGfxPtr(console->getBg()), fontTiles, fontTilesLen);
+  memcpy(BG_PALETTE_SUB, fontPal, fontPalLen);
 
   // game loop
   do {
@@ -110,13 +104,9 @@ int main() {
     memcpy(bgGetGfxPtr(3), buf, sizeof(buf));
 
     // print info to the console bg
-    static char str[32];
-    snprintf(str, 32, "Weapon:    %-10s", weapons[weapon]);
-    print(str, 0, 0, 4, 0);
-    snprintf(str, 32, "Upgrade    %d", upgrade);
-    print(str, 0, 1, 4, 0);
-    snprintf(str, 32, "Particles: %4d", pList->size());
-    print(str, 0, 2, 4, 0);
+    console->print(0, 0, "Weapon:    %-10s", weapons[weapon]);
+    console->print(0, 1, "Upgrade    %d",    upgrade);
+    console->print(0, 2, "Particles: %4d",   pList->size());
 
     // clear the framebuffer
     memset(buf, 0, sizeof(buf));
@@ -243,6 +233,9 @@ int main() {
 
   // clean up the particle list
   delete pList;
+
+  // clean up the console
+  delete console;
 
 #ifdef FEOS
   // switch back to FeOS console mode
