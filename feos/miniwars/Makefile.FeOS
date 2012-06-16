@@ -29,9 +29,6 @@ SOURCES       := source gfx
 DATA          := data
 INCLUDES      := include gfx
 
-CONF_DEFINES  := -D"inttof32(n)=((n)<<12)" \
-                 -D"f32toint(n)=((n)>>12)" \
-                 -D"floattof32(n)=((int)((n)*(1<<12)))"
 CONF_CXXFLAGS := -Wall
 
 include $(FEOSMK)/app.mk
