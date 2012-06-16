@@ -17,9 +17,10 @@ private:
   private:
     s32 dx;
     s32 dy;
+    u8  color;
   public:
     pPlasma(s32 x, s32 y, s32 tx, s32 ty, s32 phase)
-      : Particle(x,y)
+      : Particle(x,y), color(2)
     {
       s32 direction = atan2Tonc(ty-y, tx-x) + (sinLerp(phase)>>4);
       dx = cosLerp(direction);
@@ -39,14 +40,18 @@ private:
     s32 getX()     { return f32toint(x); }
     s32 getY()     { return f32toint(y); }
     bool isValid() { return valid;       }
+    u8  getColor() { return (color = (color+1)%14)+2; }
   };
 
   Plasma();
   ~Plasma();
 public:
-  static void shoot(s32 x, s32 y, s32 tx, s32 ty, s32 phase, int upgrade, list<Particle*> *pList) {
-    for(int i = 0; i < upgrade; i++)
+  static void shoot(s32 x, s32 y, s32 tx, s32 ty, s32 phase, u32 upgrade, list<Particle*> *pList) {
+    for(u32 i = 0; i < upgrade; i++)
       pList->push_back(new pPlasma(x, y, tx, ty, phase + i*degreesToAngle(360/upgrade)));
+  }
+
+  static void update(u32 upgrade) {
   }
 };
 

@@ -14,6 +14,7 @@
 
 class Mortar {
 private:
+  static u32 cooldown;
   class pMortar : public Particle {
   private:
     s32 dx;
@@ -30,8 +31,8 @@ private:
       pShrapnel(s32 x, s32 y, int upgrade)
       : Particle(x,y), distance(inttof32(5*upgrade)) {
         s32 direction = rand()%32768;
-        dx = cosLerp(direction)/2;
-        dy = sinLerp(direction)/2;
+        dx = cosLerp(direction)/4;
+        dy = sinLerp(direction)/4;
       }
 
       void move() {
@@ -47,6 +48,7 @@ private:
       s32 getX()     { return f32toint(x); }
       s32 getY()     { return f32toint(y); }
       bool isValid() { return valid;       }
+      u8  getColor() { return 7;           }
     };
   public:
     pMortar(s32 x, s32 y, s32 tx, s32 ty, int upgrade, list<Particle*> *pList)
@@ -79,17 +81,22 @@ private:
     s32 getX()     { return f32toint(x); }
     s32 getY()     { return f32toint(y); }
     bool isValid() { return valid;       }
+    u8  getColor() { return 5;           }
   };
 
   Mortar();
   ~Mortar();
 public:
-  static void shoot(s32 x, s32 y, s32 tx, s32 ty, int upgrade, list<Particle*> *pList) {
-    static int cooldown = 60;
-    if(cooldown <= 0) {
+  static void shoot(s32 x, s32 y, s32 tx, s32 ty, u32 upgrade, list<Particle*> *pList) {
+    if(cooldown == 0) {
       pList->push_back(new pMortar(x, y, tx, ty, upgrade, pList));
       cooldown = 60;
     }
+  }
+
+  static void update(u32 upgrade) {
+    if(cooldown < upgrade)
+      cooldown = 0;
     else
       cooldown -= upgrade;
   }

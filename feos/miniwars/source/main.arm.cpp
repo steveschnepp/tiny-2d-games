@@ -32,16 +32,19 @@ static const char *weapons[NUM_WEAPONS] = {
 };
 
 // the main bg palette
-static const u16 pal[256] = {
+static u16 pal[256] = {
   RGB15( 0,  0,  0), // this is the backdrop color (transparent otherwise)
   RGB15( 0, 31,  0), // player color
-  RGB15(31, 31,  0), // particle color
 };
+
+static inline int remap(int pos, int from_start, int from_end, int to_start, int to_end) {
+  return (pos-from_start)*(to_end-to_start)/(from_end-from_start) + to_start;
+}
 
 int main() {
   int    down, held;       // button states
   int    frame   = 0;      // frame counter
-  int    upgrade = 1;      // weapon upgrade level
+  u32    upgrade = 1;      // weapon upgrade level
   Weapon weapon  = PLASMA; // weapon type
   touchPosition stylus;    // touch coordinates
   list<Particle*> *pList;  // particle list
@@ -55,7 +58,7 @@ int main() {
   // initialize the player
   player.x = 0;
   player.y = 0;
-  player.speed = floattof32(0.5f);
+  player.speed = floattof32(0.3f);
 
   // create a particle list
   pList = new list<Particle*>;
@@ -87,6 +90,13 @@ int main() {
   bgInit(3, BgType_Bmp8, BgSize_B8_256x256, 0, 0);
 
   // initialize the main bg palette
+  for(int i = 2; i < 9; i++) {
+    int r = remap(i, 2, 8, 15, 31);
+    int g = remap(i, 2, 8, 10, 31);
+    int b = 0;
+    pal[i] = RGB15(r, g, b);
+    pal[17-i] = RGB15(r, g, b);
+  }
   memcpy(BG_PALETTE, pal, sizeof(pal));
 
   // initialize the console background
@@ -105,7 +115,7 @@ int main() {
 
     // print info to the console bg
     console->print(0, 0, "Weapon:    %-10s", weapons[weapon]);
-    console->print(0, 1, "Upgrade    %d",    upgrade);
+    console->print(0, 1, "Upgrade    %4u",    upgrade);
     console->print(0, 2, "Particles: %4d",   pList->size());
 
     // clear the framebuffer
@@ -201,7 +211,7 @@ int main() {
       Particle *p = *it;
       p->move();
       if(p->isValid())
-        buf[p->getY()][p->getX()] = 2;
+        buf[p->getY()][p->getX()] = p->getColor();
     }
 
     // draw player
@@ -220,6 +230,11 @@ int main() {
 
     // increment the frame counter
     frame++;
+
+    // update the weapons
+    Plasma::update(upgrade);
+    Shotgun::update(upgrade);
+    Mortar::update(upgrade);
   } while(!(down & KEY_START));
 
   // remove and clean up all of the particles
