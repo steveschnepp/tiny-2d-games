@@ -10,7 +10,7 @@
 
 #define BRAD_PI (1<<14)
 
-u32 atan2Tonc(s32 y, s32 x) {
+static inline u32 atan2Tonc(s32 y, s32 x) {
   if(y == 0)
     return (x >= 0 ? 0 : BRAD_PI);
 
