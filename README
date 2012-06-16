@@ -1,0 +1,8 @@
+This is a repo for tiny 2D games.
+
+They are mainly coded as a learning tool. If a real game can come out of it, the better !
+Games should either be targeted to one plateform, or be somewhat portable.
+
+There are currently 2 subdirs/plateform, all relative to NDS : 
+- nds, plain libnds games.
+- feos, using FeOS. http://feos.mtheall.com/
