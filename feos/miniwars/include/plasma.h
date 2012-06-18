@@ -10,9 +10,11 @@
 #include "particle.h"
 #include "atan.h"
 #include "list.h"
+#include "weapon.h"
 
-class Plasma {
+class Plasma : public Weapon {
 private:
+  u32 phase;
   class pPlasma : public Particle {
   private:
     s32 dx;
@@ -43,16 +45,19 @@ private:
     u8  getColor() { return (color = (color+1)%14)+2; }
   };
 
-  Plasma();
-  ~Plasma();
 public:
-  static void shoot(s32 x, s32 y, s32 tx, s32 ty, s32 phase, u32 upgrade, list<Particle*> *pList) {
+  Plasma() : Weapon(0), phase(0) {}
+
+  void shoot(s32 x, s32 y, s32 tx, s32 ty, u32 upgrade, list<Particle*> *pList) {
     for(u32 i = 0; i < upgrade; i++)
       pList->push_back(new pPlasma(x, y, tx, ty, phase + i*degreesToAngle(360/upgrade)));
   }
 
-  static void update(u32 upgrade) {
+  void update(u32 upgrade) {
+    phase += 2148;
   }
+
+  const char* getName() const { return "Plasma"; }
 };
 
 #endif /* PLASMA_H */

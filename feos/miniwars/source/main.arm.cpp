@@ -12,24 +12,10 @@
 #include "console.h"
 #include "font.h"
 #include "list.h"
+#include "weapon.h"
 
 // the frame buffer
 static u8 buf[192][256];
-
-// the weapon types
-enum Weapon {
-  PLASMA,
-  SHOTGUN,
-  MORTAR,
-  NUM_WEAPONS,
-};
-
-// the weapon names
-static const char *weapons[NUM_WEAPONS] = {
-  "Plasma",
-  "Shotgun",
-  "Mortar",
-};
 
 // the main bg palette
 static u16 pal[256] = {
@@ -41,11 +27,24 @@ static inline int remap(int pos, int from_start, int from_end, int to_start, int
   return (pos-from_start)*(to_end-to_start)/(from_end-from_start) + to_start;
 }
 
+static Shotgun shotgun;
+static Plasma  plasma;
+static Mortar  mortar;
+struct WeaponList {
+  Weapon     *current;
+  WeaponList *prev;
+  WeaponList *next;
+};
+static WeaponList pWeapons[] = {
+  { &plasma,  &pWeapons[2], &pWeapons[1] },
+  { &shotgun, &pWeapons[0], &pWeapons[2] },
+  { &mortar,  &pWeapons[1], &pWeapons[0] },
+};
+
 int main() {
   int    down, held;       // button states
   int    frame   = 0;      // frame counter
   u32    upgrade = 1;      // weapon upgrade level
-  Weapon weapon  = PLASMA; // weapon type
   touchPosition stylus;    // touch coordinates
   list<Particle*> *pList;  // particle list
   Console *console;        // text console
@@ -53,6 +52,7 @@ int main() {
     s32 x;
     s32 y;
     s32 speed;
+    WeaponList *weapons = pWeapons;
   } player;
 
   // initialize the player
@@ -114,9 +114,10 @@ int main() {
     memcpy(bgGetGfxPtr(3), buf, sizeof(buf));
 
     // print info to the console bg
-    console->print(0, 0, "Weapon:    %-10s", weapons[weapon]);
-    console->print(0, 1, "Upgrade    %4u",    upgrade);
-    console->print(0, 2, "Particles: %4d",   pList->size());
+    console->print(0, 0, "Weapon:    %-10s", player.weapons->current->getName());
+    console->print(0, 1, "Weapon:    %-10s", player.weapons->current->getAmmo());
+    console->print(0, 2, "Upgrade    %4u",   upgrade);
+    console->print(0, 3, "Particles: %4d",   pList->size());
 
     // clear the framebuffer
     memset(buf, 0, sizeof(buf));
@@ -134,9 +135,9 @@ int main() {
 
     // update the weapon type
     if(down & KEY_Y)
-      weapon = (Weapon)((weapon - 1 + NUM_WEAPONS)%NUM_WEAPONS);
+      player.weapons = player.weapons->next;
     if(down & KEY_A)
-      weapon = (Weapon)((weapon + 1)%NUM_WEAPONS);
+      player.weapons = player.weapons->prev;
 
     // move the player
     switch((held|down) & (KEY_UP|KEY_DOWN|KEY_LEFT|KEY_RIGHT)) {
@@ -187,23 +188,8 @@ int main() {
       // get the latest touch coordinates
       touchRead(&stylus);
 
-      // shoot the appropriate weapon
-      switch(weapon) {
-        case PLASMA:
-          Plasma::shoot(player.x, player.y, inttof32(stylus.px), inttof32(stylus.py), frame*2148, upgrade, pList);
-          break;
-
-        case SHOTGUN:
-          Shotgun::shoot(player.x, player.y, inttof32(stylus.px), inttof32(stylus.py), upgrade, pList);
-          break;
-
-        case MORTAR:
-          Mortar::shoot(player.x, player.y, inttof32(stylus.px), inttof32(stylus.py), upgrade, pList);
-          break;
-
-        default:
-          break;
-      }
+      // shoot the weapon
+      player.weapons->current->shoot(player.x, player.y, inttof32(stylus.px), inttof32(stylus.py), upgrade, pList);
     }
 
     // update and draw the particles
@@ -232,9 +218,8 @@ int main() {
     frame++;
 
     // update the weapons
-    Plasma::update(upgrade);
-    Shotgun::update(upgrade);
-    Mortar::update(upgrade);
+    for(u32 i = 0; i < sizeof(pWeapons)/sizeof(pWeapons[0]); i++)
+      pWeapons[i].current->update(upgrade);
   } while(!(down & KEY_START));
 
   // remove and clean up all of the particles

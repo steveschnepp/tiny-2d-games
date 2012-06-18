@@ -11,10 +11,11 @@
 #include "list.h"
 #include "particle.h"
 #include "atan.h"
+#include "weapon.h"
 
-class Shotgun {
+class Shotgun : public Weapon {
 private:
-  static u32 cooldown;
+  u32 cooldown;
   class pShotgun : public Particle {
   private:
     s32 dx;
@@ -49,10 +50,10 @@ private:
     u8  getColor() { return 8;           }
   };
 
-  Shotgun();
-  ~Shotgun();
 public:
-  static void shoot(s32 x, s32 y, s32 tx, s32 ty, u32 upgrade, list<Particle*> *pList) {
+  Shotgun() : Weapon(0), cooldown(0) {}
+
+  void shoot(s32 x, s32 y, s32 tx, s32 ty, u32 upgrade, list<Particle*> *pList) {
     if(cooldown == 0) {
       for(u32 i = 0; i < 3*upgrade; i++)
         pList->push_back(new pShotgun(x, y, tx, ty, 3*upgrade+8));
@@ -60,10 +61,12 @@ public:
     }
   }
 
-  static void update(u32 upgrade) {
+  void update(u32 upgrade) {
     if(cooldown > 0)
       cooldown--;
   }
+
+  const char* getName() const { return "Shotgun"; }
 };
 
 #endif /* SHOTGUN_H */

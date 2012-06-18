@@ -11,10 +11,11 @@
 #include "particle.h"
 #include "atan.h"
 #include "list.h"
+#include "weapon.h"
 
-class Mortar {
+class Mortar : public Weapon {
 private:
-  static u32 cooldown;
+  u32 cooldown;
   class pMortar : public Particle {
   private:
     s32 dx;
@@ -84,22 +85,24 @@ private:
     u8  getColor() { return 5;           }
   };
 
-  Mortar();
-  ~Mortar();
 public:
-  static void shoot(s32 x, s32 y, s32 tx, s32 ty, u32 upgrade, list<Particle*> *pList) {
+  Mortar() : Weapon(0), cooldown(0) {}
+
+  void shoot(s32 x, s32 y, s32 tx, s32 ty, u32 upgrade, list<Particle*> *pList) {
     if(cooldown == 0) {
       pList->push_back(new pMortar(x, y, tx, ty, upgrade, pList));
       cooldown = 60;
     }
   }
 
-  static void update(u32 upgrade) {
+  void update(u32 upgrade) {
     if(cooldown < upgrade)
       cooldown = 0;
     else
       cooldown -= upgrade;
   }
+
+  const char* getName() const { return "Mortar"; }
 };
 
 #endif /* MORTAR_H */
