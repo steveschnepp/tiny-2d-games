@@ -1,4 +1,8 @@
+#ifdef FEOS
 #include <feos.h>
+#else
+#include <nds.h>
+#endif
 #include <string.h>
 #include <stdio.h>
 #include <stdarg.h>

@@ -1,6 +1,6 @@
 #pragma once
-#ifndef CONSOLE_H
-#define CONSOLE_H
+#ifndef __CONSOLE_H
+#define __CONSOLE_H
 
 class Console {
 private:
@@ -18,5 +18,5 @@ public:
   void print(int x, int y, const char *format, ...);
 };
 
-#endif /* CONSOLE_H */
+#endif /* __CONSOLE_H */
 
