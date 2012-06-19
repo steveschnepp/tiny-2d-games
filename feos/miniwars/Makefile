@@ -1,18 +1,15 @@
-.PHONY: all gfx game clean install
+.PHONY: all gfx feos clean install
 
-all: game
+all: feos
 
 nds: gfx
 	@$(MAKE) --no-print-directory -f Makefile.libnds || exit 1
 
-gfx: build
+gfx:
 	@$(MAKE) --no-print-directory -C gfx || exit 1
 	@for i in gfx/*.s; do if ! grep -q hidden $$i; then sed 's/\(\([ \t]*\)\.global\([ \t]*\)\([^ \t]*\).*\)/\1\n\2.hidden\3\4/g' -i $$i; fi; done
 
-build:
-	@mkdir $@
-
-game: gfx
+feos: gfx
 	@THIS_MAKEFILE=Makefile.FeOS $(MAKE) -f Makefile.FeOS || exit 1
 
 clean:

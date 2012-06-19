@@ -14,8 +14,8 @@ include $(DEVKITARM)/ds_rules
 # SOURCES is a list of directories containing source code
 # INCLUDES is a list of directories containing extra header files
 #---------------------------------------------------------------------------------
-TARGET		:=	$(shell basename $(CURDIR))
-BUILD		:=	build
+TARGET		:=	miniwars_native
+BUILD		:=	build_nds
 SOURCES		:=	source gfx
 INCLUDES	:=	include gfx
 
