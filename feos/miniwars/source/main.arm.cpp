@@ -115,7 +115,7 @@ int main() {
 
     // print info to the console bg
     console->print(0, 0, "Weapon:    %-10s", player.weapons->current->getName());
-    console->print(0, 1, "Weapon:    %-10s", player.weapons->current->getAmmo());
+    console->print(0, 1, "Weapon:    %4u",   player.weapons->current->getAmmo());
     console->print(0, 2, "Upgrade    %4u",   upgrade);
     console->print(0, 3, "Particles: %4d",   pList->size());
 

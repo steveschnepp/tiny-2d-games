@@ -86,12 +86,17 @@ private:
   };
 
 public:
-  Mortar() : Weapon(0), cooldown(0) {}
+  Mortar() : Weapon(2), cooldown(0) {}
 
   void shoot(s32 x, s32 y, s32 tx, s32 ty, u32 upgrade, list<Particle*> *pList) {
     if(cooldown == 0) {
       pList->push_back(new pMortar(x, y, tx, ty, upgrade, pList));
-      cooldown = 60;
+      if(ammo && --ammo)
+        cooldown = 60 + 20*upgrade;
+      else {
+        cooldown = 120*upgrade;
+        reloading = true;
+      }
     }
   }
 
@@ -100,6 +105,11 @@ public:
       cooldown = 0;
     else
       cooldown -= upgrade;
+
+    if(reloading && cooldown == 0) {
+      ammo = 2*upgrade;
+      reloading = false;
+    }
   }
 
   const char* getName() const { return "Mortar"; }
