@@ -15,6 +15,7 @@
 class Plasma : public Weapon {
 private:
   u32 phase;
+  u32 cooldown;
   class pPlasma : public Particle {
   private:
     s32 dx;
@@ -46,13 +47,16 @@ private:
   };
 
 public:
-  Plasma() : Weapon(100), phase(0) {}
+  Plasma() : Weapon(100), phase(0), cooldown(0) {}
 
   void shoot(s32 x, s32 y, s32 tx, s32 ty, list<Particle*> *pList) {
-    if(!reloading && ammo > 2*upgrade) {
-      ammo -= 2*upgrade;
-      for(u32 i = 0; i < upgrade; i++)
-        pList->push_back(new pPlasma(x, y, tx, ty, phase + i*degreesToAngle(360/upgrade)));
+    if(!reloading && ammo > upgrade) {
+      ammo -= upgrade+1;
+      if(cooldown == 0) {
+        for(u32 i = 0; i < upgrade; i++)
+          pList->push_back(new pPlasma(x, y, tx, ty, phase + i*degreesToAngle(360/upgrade)));
+        cooldown = 8;
+      }
     }
     else if(!reloading) {
       reloading = true;
@@ -65,6 +69,9 @@ public:
       ammo++;
     else
       reloading = false;
+
+    if(cooldown > 0)
+      cooldown--;
   }
 
   const char* getName() const { return "Plasma"; }
