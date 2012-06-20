@@ -1,20 +1,7 @@
-#ifdef FEOS
-#include <feos.h>
-#else
-#include <nds.h>
-#endif
 #include <stdio.h>
 #include <string.h>
-#include "particle.h"
-#include "plasma.h"
-#include "shotgun.h"
-#include "mortar.h"
-#include "console.h"
+#include "miniwars.h"
 #include "font.h"
-#include "list.h"
-#include "weapon.h"
-#include "player.h"
-#include "enemy.h"
 
 // the frame buffer
 static u8 buf[192][256];

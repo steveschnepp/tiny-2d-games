@@ -2,16 +2,8 @@
 #ifndef SHOTGUN_H
 #define SHOTGUN_H
 
-#ifdef FEOS
-#include <feos.h>
-#else
-#include <nds.h>
-#endif
 #include <stdlib.h>
-#include "list.h"
-#include "particle.h"
-#include "atan.h"
-#include "weapon.h"
+#include "miniwars.h"
 
 class Shotgun : public Weapon {
 private:

@@ -1,13 +1,5 @@
-#ifdef FEOS
-#include <feos.h>
-#else
-#include <nds.h>
-#endif
 #include <string.h>
-#include "list.h"
-#include "character.h"
-#include "weapon.h"
-#include "atan.h"
+#include "miniwars.h"
 
 Character::~Character() {
   for(it = weapons.begin(); it != weapons.end(); it++) {

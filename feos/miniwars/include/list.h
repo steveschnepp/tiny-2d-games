@@ -2,6 +2,8 @@
 #ifndef LIST_H
 #define LIST_H
 
+#include "miniwars.h"
+
 template <class T>
 class list {
 private:

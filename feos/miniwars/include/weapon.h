@@ -2,13 +2,7 @@
 #ifndef WEAPON_H
 #define WEAPON_H
 
-#ifdef FEOS
-#include <feos.h>
-#else
-#include <nds.h>
-#endif
-#include "list.h"
-#include "particle.h"
+#include "miniwars.h"
 
 class Weapon {
 protected:

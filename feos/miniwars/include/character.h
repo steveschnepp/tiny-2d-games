@@ -2,13 +2,7 @@
 #ifndef CHARACTER_H
 #define CHARACTER_H
 
-#ifdef FEOS
-#include <feos.h>
-#else
-#include <nds.h>
-#endif
-#include "weapon.h"
-#include "list.h"
+#include "miniwars.h"
 
 class Character {
 protected:

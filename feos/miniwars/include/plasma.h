@@ -2,15 +2,7 @@
 #ifndef PLASMA_H
 #define PLASMA_H
 
-#ifdef FEOS
-#include <feos.h>
-#else
-#include <nds.h>
-#endif
-#include "particle.h"
-#include "atan.h"
-#include "list.h"
-#include "weapon.h"
+#include "miniwars.h"
 
 class Plasma : public Weapon {
 private:

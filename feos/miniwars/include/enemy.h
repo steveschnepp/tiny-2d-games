@@ -2,11 +2,7 @@
 #ifndef ENEMY_H
 #define ENEMY_H
 
-#include "character.h"
-#include "player.h"
-#include "weapon.h"
-#include "list.h"
-#include "particle.h"
+#include "miniwars.h"
 
 class Enemy : public Character {
 private:

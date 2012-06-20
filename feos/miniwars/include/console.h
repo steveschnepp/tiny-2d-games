@@ -2,6 +2,8 @@
 #ifndef __CONSOLE_H
 #define __CONSOLE_H
 
+#include "miniwars.h"
+
 class Console {
 private:
   int bg;
