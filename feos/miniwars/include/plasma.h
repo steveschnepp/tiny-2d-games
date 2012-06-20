@@ -48,7 +48,7 @@ private:
 public:
   Plasma() : Weapon(100), phase(0) {}
 
-  void shoot(s32 x, s32 y, s32 tx, s32 ty, u32 upgrade, list<Particle*> *pList) {
+  void shoot(s32 x, s32 y, s32 tx, s32 ty, list<Particle*> *pList) {
     if(!reloading && ammo > 2*upgrade) {
       ammo -= 2*upgrade;
       for(u32 i = 0; i < upgrade; i++)
@@ -59,7 +59,7 @@ public:
     }
   }
 
-  void update(u32 upgrade) {
+  void update() {
     phase += 2148;
     if(ammo < upgrade*100)
       ammo++;

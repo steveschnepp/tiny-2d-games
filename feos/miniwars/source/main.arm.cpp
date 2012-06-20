@@ -13,6 +13,7 @@
 #include "font.h"
 #include "list.h"
 #include "weapon.h"
+#include "player.h"
 
 // the frame buffer
 static u8 buf[192][256];
@@ -27,20 +28,6 @@ static inline int remap(int pos, int from_start, int from_end, int to_start, int
   return (pos-from_start)*(to_end-to_start)/(from_end-from_start) + to_start;
 }
 
-static Shotgun shotgun;
-static Plasma  plasma;
-static Mortar  mortar;
-struct WeaponList {
-  Weapon     *current;
-  WeaponList *prev;
-  WeaponList *next;
-};
-static WeaponList pWeapons[] = {
-  { &plasma,  &pWeapons[2], &pWeapons[1] },
-  { &shotgun, &pWeapons[0], &pWeapons[2] },
-  { &mortar,  &pWeapons[1], &pWeapons[0] },
-};
-
 int main() {
   int    down, held;       // button states
   int    frame   = 0;      // frame counter
@@ -48,17 +35,14 @@ int main() {
   touchPosition stylus;    // touch coordinates
   list<Particle*> *pList;  // particle list
   Console *console;        // text console
-  struct {
-    s32 x;
-    s32 y;
-    s32 speed;
-    WeaponList *weapons = pWeapons;
-  } player;
+  Player player;           // the player
 
   // initialize the player
-  player.x = 0;
-  player.y = 0;
-  player.speed = floattof32(0.3f);
+  player.setPosition(0, 0);
+  player.setSpeed(floattof32(0.3f));
+  player.pickup(new Plasma());
+  player.pickup(new Mortar());
+  player.pickup(new Shotgun());
 
   // create a particle list
   pList = new list<Particle*>;
@@ -114,8 +98,8 @@ int main() {
     memcpy(bgGetGfxPtr(3), buf, sizeof(buf));
 
     // print info to the console bg
-    console->print(0, 0, "Weapon:    %-10s", player.weapons->current->getName());
-    console->print(0, 1, "Weapon:    %4u",   player.weapons->current->getAmmo());
+    console->print(0, 0, "Weapon:    %-10s", player.getWeapon()->getName());
+    console->print(0, 1, "Ammo:      %4u",   player.getWeapon()->getAmmo());
     console->print(0, 2, "Upgrade    %4u",   upgrade);
     console->print(0, 3, "Particles: %4d",   pList->size());
 
@@ -135,61 +119,23 @@ int main() {
 
     // update the weapon type
     if(down & KEY_Y)
-      player.weapons = player.weapons->next;
-    if(down & KEY_A)
-      player.weapons = player.weapons->prev;
+      player.nextWeapon();
 
     // move the player
-    switch((held|down) & (KEY_UP|KEY_DOWN|KEY_LEFT|KEY_RIGHT)) {
-      // cardinal directions
-      case KEY_UP:
-        player.y -= player.speed;
-        break;
-      case KEY_DOWN:
-        player.y += player.speed;
-        break;
-      case KEY_LEFT:
-        player.x -= player.speed;
-        break;
-      case KEY_RIGHT:
-        player.x += player.speed;
-        break;
-
-      // diagonal directions
-      case (KEY_UP|KEY_LEFT):
-        player.x -= mulf32(floattof32(0.707106781f), player.speed);
-        player.y -= mulf32(floattof32(0.707106781f), player.speed);
-        break;
-      case (KEY_UP|KEY_RIGHT):
-        player.x += mulf32(floattof32(0.707106781f), player.speed);
-        player.y -= mulf32(floattof32(0.707106781f), player.speed);
-        break;
-      case (KEY_DOWN|KEY_LEFT):
-        player.x -= mulf32(floattof32(0.707106781f), player.speed);
-        player.y += mulf32(floattof32(0.707106781f), player.speed);
-        break;
-      case (KEY_DOWN|KEY_RIGHT):
-        player.x += mulf32(floattof32(0.707106781f), player.speed);
-        player.y += mulf32(floattof32(0.707106781f), player.speed);
-        break;
-
-      // crazy directions !
-      default:
-        break;
-    }
+    player.move((held|down));
 
     // clamp the player position
-    if(player.x < 0)              player.x = 0;
-    if(player.x >= inttof32(256)) player.x = inttof32(256)-1;
-    if(player.y < 0)              player.y = 0;
-    if(player.y >= inttof32(192)) player.y = inttof32(192)-1;
+    if(player.getX() < 0)              player.setPosition(0, player.getY());
+    if(player.getX() >= inttof32(256)) player.setPosition(inttof32(256)-1, player.getY());
+    if(player.getX() < 0)              player.setPosition(player.getX(), 0);
+    if(player.getX() >= inttof32(192)) player.setPosition(player.getX(), inttof32(192)-1);
 
     if((down|held) & KEY_TOUCH) {
       // get the latest touch coordinates
       touchRead(&stylus);
 
       // shoot the weapon
-      player.weapons->current->shoot(player.x, player.y, inttof32(stylus.px), inttof32(stylus.py), upgrade, pList);
+      player.getWeapon()->shoot(player.getX(), player.getY(), inttof32(stylus.px), inttof32(stylus.py), pList);
     }
 
     // update and draw the particles
@@ -201,7 +147,7 @@ int main() {
     }
 
     // draw player
-    buf[f32toint(player.y)][f32toint(player.x)] = 1;
+    buf[f32toint(player.getY())][f32toint(player.getX())] = 1;
 
     // remove and clean up all of the stale particles
     for(list<Particle*>::iterator it = pList->begin(); it != pList->end(); it++) {
@@ -218,8 +164,7 @@ int main() {
     frame++;
 
     // update the weapons
-    for(u32 i = 0; i < sizeof(pWeapons)/sizeof(pWeapons[0]); i++)
-      pWeapons[i].current->update(upgrade);
+    player.update();
   } while(!(down & KEY_START));
 
   // remove and clean up all of the particles

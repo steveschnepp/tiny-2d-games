@@ -54,7 +54,7 @@ private:
 public:
   Shotgun() : Weapon(6), cooldown(0) {}
 
-  void shoot(s32 x, s32 y, s32 tx, s32 ty, u32 upgrade, list<Particle*> *pList) {
+  void shoot(s32 x, s32 y, s32 tx, s32 ty, list<Particle*> *pList) {
     if(cooldown == 0) {
       for(u32 i = 0; i < 3*upgrade; i++)
         pList->push_back(new pShotgun(x, y, tx, ty, 3*upgrade+8));
@@ -67,7 +67,7 @@ public:
     }
   }
 
-  void update(u32 upgrade) {
+  void update() {
     if(cooldown > 0)
       cooldown--;
     if(reloading && cooldown == 0) {
