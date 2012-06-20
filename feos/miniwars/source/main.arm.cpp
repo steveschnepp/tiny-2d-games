@@ -144,6 +144,7 @@ int main() {
     if(down & KEY_B) upgrade--;
     if(upgrade < 1)  upgrade = 1;
     if(upgrade > 4)  upgrade = 4;
+    player.getWeapon()->setUpgrade(upgrade);
 
     // update the weapon type
     if(down & KEY_Y)
