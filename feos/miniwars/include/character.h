@@ -20,7 +20,7 @@ protected:
   list<Weapon*>::iterator it;
 public:
   Character() : x(0), y(0), speed(0), health(0), weapons(), it(weapons.begin()) {}
-  ~Character();
+  virtual ~Character();
 
   s32  getX()     const      { return x;              }
   s32  getY()     const      { return y;              }
@@ -38,6 +38,7 @@ public:
   u32  numWeapons() const { return weapons.size(); }
 
   void move(int keys);
+  void move(Character *target);
   virtual void update() = 0;
 };
 

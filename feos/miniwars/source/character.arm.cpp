@@ -7,6 +7,7 @@
 #include "list.h"
 #include "character.h"
 #include "weapon.h"
+#include "atan.h"
 
 Character::~Character() {
   for(it = weapons.begin(); it != weapons.end(); it++) {
@@ -74,5 +75,22 @@ void Character::move(int keys) {
       y += mulf32(floattof32(0.707106781f), speed);
       break;
   }
+
+  if(x < 0)              x = 0;
+  if(x >= inttof32(256)) x = inttof32(256)-1;
+  if(y < 0)              y = 0;
+  if(y >= inttof32(192)) y = inttof32(192)-1;
+}
+
+void Character::move(Character *target) {
+  s32 angle = atan2Tonc(target->getY()-y, target->getX()-x);
+
+  x += mulf32(speed, cosLerp(angle));
+  y += mulf32(speed, sinLerp(angle));
+
+  if(x < 0)              x = 0;
+  if(x >= inttof32(256)) x = inttof32(256)-1;
+  if(y < 0)              y = 0;
+  if(y >= inttof32(192)) y = inttof32(192)-1;
 }
 

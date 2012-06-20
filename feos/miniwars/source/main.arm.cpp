@@ -14,6 +14,7 @@
 #include "list.h"
 #include "weapon.h"
 #include "player.h"
+#include "enemy.h"
 
 // the frame buffer
 static u8 buf[192][256];
@@ -36,6 +37,7 @@ int main() {
   list<Particle*> *pList;  // particle list
   Console *console;        // text console
   Player player;           // the player
+  list<Enemy*> enemies;    // the enemies
 
   // initialize the player
   player.setPosition(0, 0);
@@ -102,9 +104,35 @@ int main() {
     console->print(0, 1, "Ammo:      %4u",   player.getWeapon()->getAmmo());
     console->print(0, 2, "Upgrade    %4u",   upgrade);
     console->print(0, 3, "Particles: %4d",   pList->size());
+    console->print(0, 4, "Enemies:   %4d",   enemies.size());
 
     // clear the framebuffer
     memset(buf, 0, sizeof(buf));
+
+    // add an enemy
+    if(frame%900 == 0) {
+      for(int i = 0; i < frame/1800+1; i++) {
+        try {
+          Enemy *e = new Enemy(&player, pList);
+          e->setSpeed(floattof32(0.1f));
+          try {
+            switch(rand()%3) {
+              case 0: e->pickup(new Plasma());  break;
+              case 1: e->pickup(new Shotgun()); break;
+              case 2: e->pickup(new Mortar());  break;
+            }
+          } catch(...) { delete e; throw; }
+
+          enemies.push_back(e);
+        } catch(...) {}
+      }
+    }
+
+    // update the enemies
+    for(list<Enemy*>::iterator it = enemies.begin(); it != enemies.end(); it++) {
+      Enemy *enemy = *it;
+      enemy->update();
+    }
 
     // update the button states
     scanKeys();
@@ -124,12 +152,6 @@ int main() {
     // move the player
     player.move((held|down));
 
-    // clamp the player position
-    if(player.getX() < 0)              player.setPosition(0, player.getY());
-    if(player.getX() >= inttof32(256)) player.setPosition(inttof32(256)-1, player.getY());
-    if(player.getX() < 0)              player.setPosition(player.getX(), 0);
-    if(player.getX() >= inttof32(192)) player.setPosition(player.getX(), inttof32(192)-1);
-
     if((down|held) & KEY_TOUCH) {
       // get the latest touch coordinates
       touchRead(&stylus);
@@ -144,6 +166,12 @@ int main() {
       p->move();
       if(p->isValid())
         buf[p->getY()][p->getX()] = p->getColor();
+    }
+
+    // draw enemies
+    for(list<Enemy*>::iterator it = enemies.begin(); it != enemies.end(); it++) {
+      Enemy *e = *it;
+      buf[f32toint(e->getY())][f32toint(e->getX())] = 1;
     }
 
     // draw player
@@ -163,7 +191,7 @@ int main() {
     // increment the frame counter
     frame++;
 
-    // update the weapons
+    // update the player
     player.update();
   } while(!(down & KEY_START));
 
@@ -174,6 +202,12 @@ int main() {
     delete p;
     if(it == pList->end())
       break;
+  }
+
+  // remove and clean up all of the enemies
+  for(list<Enemy*>::iterator it = enemies.begin(); it != enemies.end(); it++) {
+    Enemy *e = *it;
+    delete e;
   }
 
   // clean up the particle list
