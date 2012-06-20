@@ -97,7 +97,12 @@ int main() {
     swiWaitForVBlank();
 
     // copy framebuffer to VRAM
+#if defined(FEOS) || defined(ARM9)
+    DC_FlushRange(buf, sizeof(buf));
+    dmaCopy(buf, bgGetGfxPtr(3), sizeof(buf));
+#else
     memcpy(bgGetGfxPtr(3), buf, sizeof(buf));
+#endif
 
     // print info to the console bg
     console->print(0, 0, "Weapon:    %-10s", player.getWeapon()->getName());
