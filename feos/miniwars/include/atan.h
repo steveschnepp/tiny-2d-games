@@ -2,11 +2,7 @@
 #ifndef ATAN_H
 #define ATAN_H
 
-#ifdef FEOS
-#include <feos.h>
-#else
-#include <nds.h>
-#endif
+#include "miniwars.h"
 
 #define BRAD_PI (1<<14)
 

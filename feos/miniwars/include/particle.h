@@ -2,6 +2,8 @@
 #ifndef PARTICLE_H
 #define PARTICLE_H
 
+#include "miniwars.h"
+
 class Particle {
 protected:
   s32  x;

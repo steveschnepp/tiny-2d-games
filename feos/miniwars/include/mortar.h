@@ -2,16 +2,8 @@
 #ifndef MORTAR_H
 #define MORTAR_H
 
-#ifdef FEOS
-#include <feos.h>
-#else
-#include <nds.h>
-#endif
 #include <stdlib.h>
-#include "particle.h"
-#include "atan.h"
-#include "list.h"
-#include "weapon.h"
+#include "miniwars.h"
 
 class Mortar : public Weapon {
 private:
@@ -88,7 +80,7 @@ private:
 public:
   Mortar() : Weapon(2), cooldown(0) {}
 
-  void shoot(s32 x, s32 y, s32 tx, s32 ty, u32 upgrade, list<Particle*> *pList) {
+  void shoot(s32 x, s32 y, s32 tx, s32 ty, list<Particle*> *pList) {
     if(cooldown == 0) {
       pList->push_back(new pMortar(x, y, tx, ty, upgrade, pList));
       if(ammo && --ammo)
@@ -100,7 +92,7 @@ public:
     }
   }
 
-  void update(u32 upgrade) {
+  void update() {
     if(cooldown < upgrade)
       cooldown = 0;
     else

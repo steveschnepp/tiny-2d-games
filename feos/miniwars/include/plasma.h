@@ -2,19 +2,12 @@
 #ifndef PLASMA_H
 #define PLASMA_H
 
-#ifdef FEOS
-#include <feos.h>
-#else
-#include <nds.h>
-#endif
-#include "particle.h"
-#include "atan.h"
-#include "list.h"
-#include "weapon.h"
+#include "miniwars.h"
 
 class Plasma : public Weapon {
 private:
   u32 phase;
+  u32 cooldown;
   class pPlasma : public Particle {
   private:
     s32 dx;
@@ -46,25 +39,31 @@ private:
   };
 
 public:
-  Plasma() : Weapon(100), phase(0) {}
+  Plasma() : Weapon(100), phase(0), cooldown(0) {}
 
-  void shoot(s32 x, s32 y, s32 tx, s32 ty, u32 upgrade, list<Particle*> *pList) {
-    if(!reloading && ammo > 2*upgrade) {
-      ammo -= 2*upgrade;
-      for(u32 i = 0; i < upgrade; i++)
-        pList->push_back(new pPlasma(x, y, tx, ty, phase + i*degreesToAngle(360/upgrade)));
+  void shoot(s32 x, s32 y, s32 tx, s32 ty, list<Particle*> *pList) {
+    if(!reloading && ammo > upgrade) {
+      ammo -= upgrade+1;
+      if(cooldown == 0) {
+        for(u32 i = 0; i < upgrade; i++)
+          pList->push_back(new pPlasma(x, y, tx, ty, phase + i*degreesToAngle(360/upgrade)));
+        cooldown = 8;
+      }
     }
     else if(!reloading) {
       reloading = true;
     }
   }
 
-  void update(u32 upgrade) {
+  void update() {
     phase += 2148;
     if(ammo < upgrade*100)
       ammo++;
     else
       reloading = false;
+
+    if(cooldown > 0)
+      cooldown--;
   }
 
   const char* getName() const { return "Plasma"; }

@@ -1,12 +1,7 @@
-#ifdef FEOS
-#include <feos.h>
-#else
-#include <nds.h>
-#endif
 #include <string.h>
 #include <stdio.h>
 #include <stdarg.h>
-#include "console.h"
+#include "miniwars.h"
 
 Console::Console(int bg, bool main, int mapBase, int tileBase) {
   pal = 0;
