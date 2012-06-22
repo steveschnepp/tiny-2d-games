@@ -84,7 +84,7 @@ int main() {
     swiWaitForVBlank();
 
     // copy framebuffer to VRAM
-#if defined(FEOS) || defined(ARM9)
+#ifdef ARM9
     DC_FlushRange(buf, sizeof(buf));
     dmaCopy(buf, bgGetGfxPtr(3), sizeof(buf));
 #else
